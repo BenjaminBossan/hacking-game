@@ -4,6 +4,12 @@
 
 ## How to Run the Game
 
+### Online
+
+Visit: https://benjaminbossan.github.io/hacking-game/
+
+### Local
+
 1. **Download or Clone the Repository:**
    Ensure you have the three main files in your project folder:
    - `index.html`
