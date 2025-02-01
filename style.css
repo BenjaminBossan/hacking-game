@@ -1,0 +1,161 @@
+/* Base reset */
+* {
+  box-sizing: border-box;
+  font-family: sans-serif;
+}
+
+/* Center the page content */
+body {
+  background: #f0f0f0;
+  margin: 0;
+  padding: 20px;
+  text-align: center;  /* Centers h1 and controls */
+}
+
+h1, .controls {
+  margin: 0 auto;
+}
+
+/* Controls styling */
+.controls {
+  margin-bottom: 10px;
+}
+
+/* Button styling */
+button {
+  padding: 8px 12px;
+  margin: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+/* Timer styling */
+#timer {
+  font-size: 1.2rem;
+  margin: 10px;
+  font-weight: bold;
+}
+
+/* Game container: use block layout to stack board and history vertically */
+.game-container {
+  width: 100%;
+  margin: 20px auto;
+}
+
+/* Board container */
+#boardContainer {
+  position: relative;
+  margin: 0 auto;  /* centers the container */
+  text-align: center;
+  /* The width is set dynamically by JS */
+}
+
+/* Board styling */
+#board {
+  display: grid;
+  gap: 2px;
+  margin: 0 auto; /* ensure grid is centered within boardContainer */
+  /* grid-template-columns is set dynamically in script.js */
+}
+
+/* Score history styling: place it below the board */
+#scoreHistory {
+  max-width: 300px;
+  margin: 20px auto 0;
+  text-align: left;
+}
+#historyTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+#historyTable th, #historyTable td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}
+#historyTable th {
+  background-color: #eee;
+}
+#historyTable tr.fail {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+/* Tile styling */
+.tile {
+  background: #ddd;
+  width: 50px;
+  height: 50px;
+  line-height: 50px;
+  text-align: center;
+  font-size: 1.2rem;
+  user-select: none;
+  position: relative;
+  transition: background 0.2s;
+}
+.tile-top {
+  background: #bbb;
+}
+.tile-bottom {
+  background: #bbb;
+}
+.tile.selected {
+  background: #4caf50 !important;
+  color: #fff;
+}
+.tile.legal {
+  outline: 3px solid #ff9800;
+}
+.tile.solution {
+  background: #2196f3 !important;
+  color: #fff;
+}
+
+/* Scoreboard styling */
+#scoreboard {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 1.1rem;
+}
+
+/* Message styling */
+#message {
+  text-align: center;
+  color: red;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+/* Help modal styling */
+#helpModal {
+  display: none;
+  position: fixed;
+  z-index: 10;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.5);
+}
+#helpContent {
+  background: #fff;
+  margin: 15% auto;
+  padding: 20px;
+  width: 80%;
+  max-width: 500px;
+  border-radius: 5px;
+}
+#helpContent h2 {
+  margin-top: 0;
+}
+
+/* Overlay for drawing the path */
+#overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}

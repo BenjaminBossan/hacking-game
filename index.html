@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>The Hacking Game</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>The Hacking Game</h1>
+  <div class="controls">
+    <button id="startBtn">Start Game</button>
+    <button id="restartBtn">Restart Game</button>
+    <button id="stopBtn" style="display:none;">Stop Game</button>
+    <button id="nextRoundBtn" style="display:none;">Next Round</button>
+    <button id="showSolutionBtn" style="display:none;">Show Winning Path</button>
+    <button id="helpBtn">Help</button>
+    <div id="timer">Time: 60</div>
+  </div>
+
+  <!-- Container for board and history -->
+  <div class="game-container">
+    <div id="boardContainer">
+      <div id="board"></div>
+      <svg id="overlay"></svg>
+    </div>
+    <div id="scoreHistory">
+      <table id="historyTable">
+        <thead>
+          <tr>
+            <th>Round</th>
+            <th>Min Score</th>
+            <th>Achieved Score</th>
+            <th>Cumulative Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- History rows appended dynamically -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="message"></div>
+  <div id="scoreboard">
+    Round Score: <span id="scoreBreakdown">0 x 0 = 0</span> |
+    Total Score: <span id="totalScore">0</span> |
+    Required Points: <span id="requiredPoints">50</span>
+  </div>
+  <div id="highScoreDisplay">High Score: <span id="highScore">0</span></div>
+
+  <!-- Help Modal -->
+  <div id="helpModal">
+    <div id="helpContent">
+      <h2>How to Play</h2>
+      <p><strong>Game Rules:</strong></p>
+      <ul>
+        <li>The board is a grid. Each tile shows a number (1–9).</li>
+        <li>Start by choosing a tile in the top row.</li>
+        <li>For your second move, choose a tile either in the same row or the same column as your first choice. Then moves alternate: if the previous move was horizontal, the next must be vertical, and vice versa.</li>
+        <li>You can only select a tile whose number is equal to or higher than the last selected tile.</li>
+        <li>The round ends when you select a tile in the bottom row.</li>
+        <li>Your score is computed as (sum of selected tile numbers) × (length of your path). You need to meet the required score to win the round.</li>
+        <li>If no legal move remains or time (60 seconds) runs out, you lose the round and must restart the game.</li>
+      </ul>
+      <button id="closeHelpBtn">Close</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,589 @@
+// ------------------------------
+// Parameter Object & Constants
+// ------------------------------
+const initialMinRoundScore = 50;
+const params = {
+  gridWidth: 7,
+  gridHeight: 7,
+  minTileValue: 1,
+  maxTileValue: 9,
+  roundTime: 60,       // seconds per round
+  minRoundScore: initialMinRoundScore,
+  requiredPointsIncrement: 50,
+  minPathLength: 7,
+  maxPathLength: 12,
+  maxSequenceAttempts: 100,
+  maxPathAttempts: 100
+};
+
+// ------------------------------
+// Global Game Variables
+// ------------------------------
+let board = []; // 2D array of tile values
+let winningPath = []; // Array of objects: {row, col, value}
+let winningSequence = []; // The pre-generated sequence of numbers (non-decreasing)
+let selectedPath = []; // Array of objects: {row, col, value}
+let timerInterval = null;
+let timeLeft = params.roundTime;
+let totalScore = 0;
+let roundScore = 0;
+let gameActive = false;  // round is in progress
+let roundNumber = 1; // Global round counter
+let gameStopped = false;
+let gameOver = false;
+
+// ------------------------------
+// DOM Elements
+// ------------------------------
+const boardEl = document.getElementById('board');
+const overlayEl = document.getElementById('overlay');
+const timerEl = document.getElementById('timer');
+const messageEl = document.getElementById('message');
+const scoreBreakdownEl = document.getElementById('scoreBreakdown');
+const totalScoreEl = document.getElementById('totalScore');
+const requiredPointsEl = document.getElementById('requiredPoints');
+const startBtn = document.getElementById('startBtn');
+const restartBtn = document.getElementById('restartBtn');
+const nextRoundBtn = document.getElementById('nextRoundBtn');
+const showSolutionBtn = document.getElementById('showSolutionBtn');
+const helpBtn = document.getElementById('helpBtn');
+const helpModal = document.getElementById('helpModal');
+const closeHelpBtn = document.getElementById('closeHelpBtn');
+
+document.addEventListener('DOMContentLoaded', () => {
+  const tileSize = 50; // px
+  const gap = 2;       // px
+  const containerWidth = (tileSize * params.gridWidth) + (gap * (params.gridWidth - 1));
+  document.getElementById('boardContainer').style.width = containerWidth + 'px';
+  displayHighScore();
+});
+
+// ------------------------------
+// Utility Functions
+// ------------------------------
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+// Returns a deep copy of an array of objects
+function deepCopy(arr) {
+  return JSON.parse(JSON.stringify(arr));
+}
+
+// ------------------------------
+// Winning Sequence Generation
+// ------------------------------
+
+// Generate a non-decreasing sequence of numbers uniformly.
+// We generate an array of random numbers (each uniformly from minTileValue to maxTileValue)
+// then sort it (which yields a non-decreasing sequence). We choose a random length between min and max.
+// We require that (length * sum) >= minRoundScore.
+function generateWinningSequence() {
+  const { minTileValue, maxTileValue, minRoundScore, minPathLength, maxPathLength, maxSequenceAttempts } = params;
+  let attempts = 0;
+  while (attempts < maxSequenceAttempts) {
+    const length = randInt(minPathLength, maxPathLength);
+    let seq = [];
+    for (let i = 0; i < length; i++) {
+      seq.push(randInt(minTileValue, maxTileValue));
+    }
+    seq.sort((a, b) => a - b);
+    const sum = seq.reduce((a, b) => a + b, 0);
+    const score = sum * length;
+    if (score >= minRoundScore) {
+      return { seq, length };
+    }
+    attempts++;
+  }
+  return null; // failed to generate a valid sequence after many attempts.
+}
+
+// ------------------------------
+// Winning Path Layout Generation
+// ------------------------------
+
+// Lay out the winning sequence on the grid with the following rules:
+//   - The first tile must be in the top row.
+//   - The last tile must be in the bottom row.
+//   - Moves alternate: once the first move's type is chosen (either horizontal or vertical),
+//     subsequent moves alternate.
+// For horizontal moves: the row remains the same, and the column must change.
+// For vertical moves: the column remains the same, and the row must increase (at least by 1).
+function generateWinningPathLayout(n) {
+  const gridHeight = params.gridHeight;
+  const gridWidth = params.gridWidth;
+  let bestPath = null;
+
+  // Decide the alternating pattern.
+  function randomPattern() {
+    const pattern = [];
+    const firstMove = (Math.random() < 0.5) ? 'horizontal' : 'vertical';
+    pattern.push(firstMove);
+    for (let i = 1; i < n - 1; i++) {
+      pattern.push(pattern[i - 1] === 'horizontal' ? 'vertical' : 'horizontal');
+    }
+    return pattern;
+  }
+
+  // Recursive backtracking function.
+  function backtrack(index, curr, pattern, path) {
+    // If we've reached the bottom row too early, do not continue.
+    if (curr.row === gridHeight - 1 && index < n - 1) {
+      return false;
+    }
+    if (index === n - 1) {
+      // Last tile must be in the bottom row.
+      if (curr.row === gridHeight - 1) {
+        bestPath = deepCopy(path);
+        return true;
+      }
+      return false;
+    }
+    const remainingMoves = n - 1 - index;
+    // Count remaining vertical moves.
+    const remainingVertical = pattern.slice(index).filter(m => m === 'vertical').length;
+    const moveType = pattern[index];
+    let candidates = [];
+    if (moveType === 'horizontal') {
+      // Allowed moves: same row, any column except current.
+      for (let col = 0; col < gridWidth; col++) {
+        if (col !== curr.col) {
+          candidates.push({ row: curr.row, col });
+        }
+      }
+    } else { // vertical move
+      const minNewRow = curr.row + 1;
+      // Ensure we leave enough rows for the remaining vertical moves.
+      const maxNewRow = gridHeight - (remainingVertical - 1);
+      for (let row = minNewRow; row < Math.min(maxNewRow, gridHeight); row++) {
+        candidates.push({ row, col: curr.col });
+      }
+    }
+    candidates.sort(() => Math.random() - 0.5);
+    for (let candidate of candidates) {
+      path.push(candidate);
+      if (backtrack(index + 1, candidate, pattern, path)) {
+        return true;
+      }
+      path.pop();
+    }
+    return false;
+  }
+
+  for (let attempt = 0; attempt < params.maxPathAttempts; attempt++) {
+    const pattern = randomPattern();
+    const startCol = randInt(0, gridWidth - 1);
+    const path = [{ row: 0, col: startCol }];
+    if (backtrack(0, { row: 0, col: startCol }, pattern, path)) {
+      return bestPath;
+    }
+  }
+  return null;
+}
+
+// ------------------------------
+// Board Generation
+// ------------------------------
+
+// Generate the board with a winning path embedded.
+function generateBoard() {
+  const { gridHeight, gridWidth } = params;
+  // Initialize board with nulls.
+  board = Array.from({ length: gridHeight }, () => Array(gridWidth).fill(null));
+
+  const seqResult = generateWinningSequence();
+  if (!seqResult) {
+    alert("Unable to generate a winning sequence. Please try again later.");
+    gameActive = false;
+    return;
+  }
+  winningSequence = seqResult.seq;
+  const seqLength = seqResult.length;
+  const pathLayout = generateWinningPathLayout(seqLength);
+  if (!pathLayout) {
+    alert("Unable to generate a winning path layout. Please try again later.");
+    gameActive = false;
+    return;
+  }
+  winningPath = deepCopy(pathLayout);
+  winningPath.forEach((tile, index) => {
+    board[tile.row][tile.col] = winningSequence[index];
+    tile.value = winningSequence[index];
+  });
+
+  for (let r = 0; r < gridHeight; r++) {
+    for (let c = 0; c < gridWidth; c++) {
+      if (board[r][c] === null) {
+        board[r][c] = randInt(params.minTileValue, params.maxTileValue);
+      }
+    }
+  }
+}
+
+// ------------------------------
+// Rendering the Board
+// ------------------------------
+function renderBoard() {
+  const { gridHeight, gridWidth } = params;
+  boardEl.innerHTML = '';
+  boardEl.style.gridTemplateColumns = `repeat(${gridWidth}, 50px)`;
+  for (let r = 0; r < gridHeight; r++) {
+    for (let c = 0; c < gridWidth; c++) {
+      const tileEl = document.createElement('div');
+      tileEl.classList.add('tile');
+      if (r === 0) tileEl.classList.add('tile-top');
+      if (r === gridHeight - 1) tileEl.classList.add('tile-bottom');
+      tileEl.dataset.row = r;
+      tileEl.dataset.col = c;
+      tileEl.textContent = board[r][c];
+      if (selectedPath.some(t => t.row === r && t.col === c)) {
+        tileEl.classList.add('selected');
+      }
+      boardEl.appendChild(tileEl);
+    }
+  }
+  overlayEl.innerHTML = '';
+}
+
+// ------------------------------
+// Drawing the Connecting Path
+// ------------------------------
+function drawPath(pathArray) {
+  overlayEl.innerHTML = '';
+  if (pathArray.length === 0) return;
+  const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+  polyline.setAttribute("fill", "none");
+  polyline.setAttribute("stroke", "red");
+  polyline.setAttribute("stroke-width", "4");
+  const boardContainer = document.getElementById('boardContainer');
+  const containerRect = boardContainer.getBoundingClientRect();
+  let points = "";
+  pathArray.forEach(tile => {
+    const tileEl = document.querySelector(`.tile[data-row="${tile.row}"][data-col="${tile.col}"]`);
+    if (tileEl) {
+      const rect = tileEl.getBoundingClientRect();
+      const cx = rect.left - containerRect.left + rect.width / 2;
+      const cy = rect.top - containerRect.top + rect.height / 2;
+      points += `${cx},${cy} `;
+    }
+  });
+  polyline.setAttribute("points", points.trim());
+  overlayEl.appendChild(polyline);
+}
+
+// ------------------------------
+// Game State Management & Moves
+// ------------------------------
+function isLegalMove(row, col) {
+  const tileValue = board[row][col];
+  // Prevent selecting a tile that's already in the selected path.
+  if (selectedPath.some(t => t.row === row && t.col === col)) return false;
+
+  // First move: must be on the top row.
+  if (selectedPath.length === 0) {
+    return row === 0;
+  }
+
+  const lastTile = selectedPath[selectedPath.length - 1];
+  // The new tile's value must be equal to or higher than the last tile's value.
+  if (tileValue < lastTile.value) return false;
+  // Second move: allow any tile in the same row or the same column.
+  if (selectedPath.length === 1) {
+    return (row === lastTile.row || col === lastTile.col);
+  }
+
+  // For subsequent moves, determine the direction of the previous move.
+  const prevTile = selectedPath[selectedPath.length - 2];
+  // If the previous move was horizontal (same row), the current move must be vertical.
+  if (prevTile.row === lastTile.row) {
+    return col === lastTile.col;
+  }
+  // If the previous move was vertical (same column), the current move must be horizontal.
+  if (prevTile.col === lastTile.col) {
+    return row === lastTile.row;
+  }
+
+  return false;
+}
+
+function highlightLegalMoves() {
+  document.querySelectorAll('.tile.legal').forEach(el => {
+    el.classList.remove('legal');
+  });
+  if (!gameActive) return;
+  const { gridHeight, gridWidth } = params;
+
+  if (selectedPath.length === 0) {
+    // For the first move, legal moves are all top row tiles.
+    for (let c = 0; c < gridWidth; c++) {
+      const tile = getTileEl(0, c);
+      if (!tile.classList.contains('selected')) {
+        tile.classList.add('legal');
+      }
+    }
+  } else {
+    const lastTile = selectedPath[selectedPath.length - 1];
+    let legalTiles = [];
+    if (selectedPath.length === 1) {
+      // For the second move, legal moves are in the same row or same column.
+      // Same row:
+      for (let c = 0; c < gridWidth; c++) {
+        if (c !== lastTile.col) legalTiles.push({ row: lastTile.row, col: c });
+      }
+      // Same column:
+      for (let r = 0; r < gridHeight; r++) {
+        if (r !== lastTile.row) legalTiles.push({ row: r, col: lastTile.col });
+      }
+    } else {
+      const prevTile = selectedPath[selectedPath.length - 2];
+      if (prevTile.row === lastTile.row) {
+        // Previous move was horizontal, so the current move must be vertical.
+        for (let r = 0; r < gridHeight; r++) {
+          if (r !== lastTile.row) legalTiles.push({ row: r, col: lastTile.col });
+        }
+      } else if (prevTile.col === lastTile.col) {
+        // Previous move was vertical, so the current move must be horizontal.
+        for (let c = 0; c < gridWidth; c++) {
+          if (c !== lastTile.col) legalTiles.push({ row: lastTile.row, col: c });
+        }
+      }
+    }
+    // Filter out moves that don't satisfy the non-decreasing condition.
+    legalTiles = legalTiles.filter(tile => board[tile.row][tile.col] >= lastTile.value);
+    legalTiles.forEach(tile => {
+      const tileEl = getTileEl(tile.row, tile.col);
+      tileEl.classList.add('legal');
+    });
+    if (legalTiles.length === 0) {
+      endRound(false, "No legal moves available.");
+    }
+  }
+}
+
+function getTileEl(row, col) {
+  return document.querySelector(`.tile[data-row="${row}"][data-col="${col}"]`);
+}
+
+function handleTileClick(e) {
+  if (!gameActive) return;
+  const tileEl = e.currentTarget;
+  if (!tileEl.classList.contains('legal')) return;
+  const row = parseInt(tileEl.dataset.row);
+  const col = parseInt(tileEl.dataset.col);
+  if (!isLegalMove(row, col)) return;
+  const value = board[row][col];
+  selectedPath.push({ row, col, value });
+  tileEl.classList.add('selected');
+  updateRoundScoreDisplay();
+  if (row === params.gridHeight - 1) {
+    const score = calculateRoundScore();
+    if (score >= params.minRoundScore) {
+      endRound(true, "Round completed successfully!");
+    } else {
+      endRound(false, "Round finished, but score is too low.");
+    }
+    drawPath(selectedPath);
+    return;
+  }
+  highlightLegalMoves();
+}
+
+function calculateRoundScore() {
+  const sum = selectedPath.reduce((acc, tile) => acc + tile.value, 0);
+  return sum * selectedPath.length;
+}
+
+function updateRoundScoreDisplay() {
+  const sum = selectedPath.reduce((acc, tile) => acc + tile.value, 0);
+  const length = selectedPath.length;
+  roundScore = sum * length;
+  scoreBreakdownEl.textContent = `${sum} x ${length} = ${roundScore}`;
+}
+
+// A function to retrieve the high score from localStorage, defaulting to 0 if not set.
+function getHighScore() {
+  return parseInt(localStorage.getItem('highScore')) || 0;
+}
+
+function updateHighScore() {
+  const currentHigh = getHighScore();
+  if (totalScore > currentHigh) {
+    localStorage.setItem('highScore', totalScore);
+  }
+}
+
+function displayHighScore() {
+  const highScore = getHighScore();
+  document.getElementById('highScore').textContent = highScore;
+}
+
+function endRound(win, msg) {
+  gameActive = false;
+  clearInterval(timerInterval);
+  document.querySelectorAll('.tile.legal').forEach(el => {
+    el.classList.remove('legal');
+  });
+  stopBtn.style.display = 'none'; // Hide the Stop button when the round ends.
+  if (win) {
+    totalScore += roundScore;
+    messageEl.textContent = msg + " Round Score: " + roundScore + ". Total Score: " + totalScore;
+    updateHistory(roundNumber, params.minRoundScore - params.requiredPointsIncrement, roundScore, totalScore);
+    roundNumber++;
+    params.minRoundScore += params.requiredPointsIncrement;
+    nextRoundBtn.style.display = 'inline-block';
+  } else {
+    messageEl.textContent = msg + " Round Score: " + roundScore + ". Total Score: " + totalScore + ". Game Over! Please restart.";
+    updateHistory(roundNumber, params.minRoundScore, roundScore, totalScore);
+    nextRoundBtn.style.display = 'none';
+    showSolutionBtn.style.display = 'inline-block';
+    gameOver = true;  // Mark that the game has ended because you lost.
+  }
+  updateHighScore(); // Update high score in localStorage if necessary.
+  displayHighScore(); // Optionally update your UI with the new high score.
+}
+
+function startTimer() {
+  timeLeft = params.roundTime;
+  timerEl.textContent = "Time: " + timeLeft;
+  timerEl.style.color = "#000";
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    timerEl.textContent = "Time: " + timeLeft;
+    if (timeLeft <= 10) timerEl.style.color = "red";
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      endRound(false, "Time's up!");
+      drawPath(selectedPath);
+    }
+  }, 1000);
+}
+
+// ------------------------------
+// Show Winning Path
+// ------------------------------
+function revealWinningPath() {
+  winningPath.forEach(tile => {
+    const tileEl = getTileEl(tile.row, tile.col);
+    if (!tileEl.classList.contains('selected')) {
+      tileEl.classList.add('solution');
+    }
+  });
+  drawPath(winningPath);
+  messageEl.textContent += " (Displayed is one possible solution.)";
+  showSolutionBtn.style.display = 'none';
+}
+
+// ------------------------------
+// Game Initialization and Reset
+// ------------------------------
+function startRound() {
+  requiredPointsEl.textContent = params.minRoundScore;
+  selectedPath = [];
+  roundScore = 0;
+  scoreBreakdownEl.textContent = "0 x 0 = 0";
+  messageEl.textContent = "";
+  gameActive = true;
+  nextRoundBtn.style.display = 'none';
+  showSolutionBtn.style.display = 'none';
+  stopBtn.style.display = 'inline-block'; // Show the Stop button when the game starts.
+  generateBoard();
+  renderBoard();
+  document.querySelectorAll('.tile').forEach(tileEl => {
+    tileEl.addEventListener('click', handleTileClick);
+  });
+  highlightLegalMoves();
+  startTimer();
+}
+
+function restartGame() {
+  clearInterval(timerInterval);
+  totalScore = 0;
+  totalScoreEl.textContent = totalScore;
+  // Reset required points to initial value.
+  params.minRoundScore = initialMinRoundScore;
+  requiredPointsEl.textContent = params.minRoundScore;
+  roundNumber = 1;
+  // Clear the history table.
+  document.querySelector('#historyTable tbody').innerHTML = "";
+  // Reset game flags.
+  gameStopped = false;
+  gameOver = false;
+  startRound();
+}
+
+// ---------------
+// Score display
+// ---------------
+
+function updateHistory(round, minScore, achieved, cumulative) {
+  const tbody = document.querySelector('#historyTable tbody');
+  const tr = document.createElement('tr');
+  // If the achieved score is less than the minimum required, mark this round as failed.
+  if (achieved < minScore) {
+    tr.classList.add('fail');
+  }
+  tr.innerHTML = `<td>${round}</td><td>${minScore}</td><td>${achieved}</td><td>${cumulative}</td>`;
+  tbody.appendChild(tr);
+}
+
+// ------------------------------
+// Button Event Listeners
+// ------------------------------
+startBtn.addEventListener('click', () => {
+  startBtn.style.display = 'none';
+  restartGame();
+});
+
+restartBtn.addEventListener('click', () => {
+  // Only ask for confirmation if the game is active (i.e. not already lost/stopped) and progress exists.
+  if (!gameStopped && !gameOver && selectedPath.length > 0) {
+    const confirmRestart = confirm("Restarting will lose your current progress. Do you really want to restart?");
+    if (!confirmRestart) {
+      return;  // Cancel restart.
+    }
+  }
+  restartGame();
+});
+
+stopBtn.addEventListener('click', () => {
+  // If the game has progress and hasn't been stopped already, ask for confirmation.
+  if (selectedPath.length > 0 && !gameStopped) {
+    const confirmStop = confirm("Stopping will lose your current progress. Do you really want to stop?");
+    if (!confirmStop) {
+      return;  // Cancel stop if user chooses so.
+    }
+  }
+  gameStopped = true;
+  clearInterval(timerInterval);
+  gameActive = false;
+  // Clear the board and overlay.
+  boardEl.innerHTML = "";
+  overlayEl.innerHTML = "";
+  // Hide game-related controls.
+  nextRoundBtn.style.display = 'none';
+  showSolutionBtn.style.display = 'none';
+  stopBtn.style.display = 'none';
+  messageEl.textContent = "Game stopped. Click 'Start Game' to play again.";
+});
+
+nextRoundBtn.addEventListener('click', () => {
+  startRound();
+});
+
+showSolutionBtn.addEventListener('click', () => {
+  revealWinningPath();
+});
+
+helpBtn.addEventListener('click', () => {
+  helpModal.style.display = 'block';
+});
+
+closeHelpBtn.addEventListener('click', () => {
+  helpModal.style.display = 'none';
+});
+
+window.addEventListener('click', (e) => {
+  if (e.target === helpModal) {
+    helpModal.style.display = 'none';
+  }
+});
