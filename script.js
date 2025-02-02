@@ -1,19 +1,20 @@
 // ------------------------------
 // Parameter Object & Constants
 // ------------------------------
-const initialMinRoundScore = 50;
+const initialMinRoundScore = 100;
+const maxMinRoundScore = 2000;
 const params = {
   gridWidth: 7,
   gridHeight: 7,
   minTileValue: 1,
   maxTileValue: 9,
-  roundTime: 60,       // seconds per round
+  roundTime: 45, // seconds per round
   minRoundScore: initialMinRoundScore,
-  requiredPointsIncrement: 50,
+  requiredPointsIncrement: 100,
   minPathLength: 7,
   maxPathLength: 12,
-  maxSequenceAttempts: 100,
-  maxPathAttempts: 100
+  maxSequenceAttempts: 1000,
+  maxPathAttempts: 1000
 };
 
 // ------------------------------
@@ -75,27 +76,35 @@ function deepCopy(arr) {
 // ------------------------------
 
 // Generate a non-decreasing sequence of numbers uniformly.
-// We generate an array of random numbers (each uniformly from minTileValue to maxTileValue)
-// then sort it (which yields a non-decreasing sequence). We choose a random length between min and max.
 // We require that (length * sum) >= minRoundScore.
-function generateWinningSequence() {
-  const { minTileValue, maxTileValue, minRoundScore, minPathLength, maxPathLength, maxSequenceAttempts } = params;
+function generateWinningSequence(requiredScore) {
+  const { minTileValue, maxTileValue, maxSequenceAttempts, minPathLength, maxPathLength } = params;
+  const mu = (minTileValue + maxTileValue) / 2;  // approximate average tile value
+  // Compute the desired sequence length based on R ≈ mu * L^2, i.e. L ≈ sqrt(R / mu)
+  let desiredLength = Math.ceil(Math.sqrt(requiredScore / mu));
+  // Define a range around the desired length.
+  // const minLen = Math.max(minPathLength, desiredLength - 2);
+  // const maxLen = Math.min(maxPathLength, desiredLength + 2);
+  const minLen = Math.max(minPathLength, desiredLength - 1);
+  const maxLen = Math.min(maxPathLength, desiredLength + 1);
+
   let attempts = 0;
   while (attempts < maxSequenceAttempts) {
-    const length = randInt(minPathLength, maxPathLength);
+    const length = randInt(minLen, maxLen);
     let seq = [];
     for (let i = 0; i < length; i++) {
       seq.push(randInt(minTileValue, maxTileValue));
     }
+    // Sort to enforce non-decreasing order.
     seq.sort((a, b) => a - b);
     const sum = seq.reduce((a, b) => a + b, 0);
     const score = sum * length;
-    if (score >= minRoundScore) {
+    if (score >= requiredScore) {
       return { seq, length };
     }
     attempts++;
   }
-  return null; // failed to generate a valid sequence after many attempts.
+  return null; // Failed after many attempts.
 }
 
 // ------------------------------
@@ -114,51 +123,65 @@ function generateWinningPathLayout(n) {
   const gridWidth = params.gridWidth;
   let bestPath = null;
 
-  // Decide the alternating pattern.
-  function randomPattern() {
+  // Generate an alternating pattern
+  function getPattern() {
     const pattern = [];
-    const firstMove = (Math.random() < 0.5) ? 'horizontal' : 'vertical';
+    const m = n - 1; // total number of moves needed
+    // If m is even, start with horizontal; if odd, start with vertical.
+    const firstMove = (m % 2 === 0) ? 'horizontal' : 'vertical';
     pattern.push(firstMove);
-    for (let i = 1; i < n - 1; i++) {
+    for (let i = 1; i < m; i++) {
       pattern.push(pattern[i - 1] === 'horizontal' ? 'vertical' : 'horizontal');
     }
     return pattern;
   }
 
-  // Recursive backtracking function.
+  // Backtracking function.
+  // index: current move index (0-indexed; first tile is already in path)
+  // curr: current position {row, col}
+  // pattern: array of move types of length (n-1)
+  // path: array of positions so far
   function backtrack(index, curr, pattern, path) {
-    // If we've reached the bottom row too early, do not continue.
+    // If we are at the bottom row before finishing the path, this branch is invalid.
     if (curr.row === gridHeight - 1 && index < n - 1) {
       return false;
     }
+    // Base case: we have generated n moves.
     if (index === n - 1) {
-      // Last tile must be in the bottom row.
       if (curr.row === gridHeight - 1) {
-        bestPath = deepCopy(path);
+        bestPath = JSON.parse(JSON.stringify(path));
         return true;
       }
       return false;
     }
-    const remainingMoves = n - 1 - index;
-    // Count remaining vertical moves.
-    const remainingVertical = pattern.slice(index).filter(m => m === 'vertical').length;
+
     const moveType = pattern[index];
     let candidates = [];
     if (moveType === 'horizontal') {
-      // Allowed moves: same row, any column except current.
+      // Horizontal moves: same row, any different column.
       for (let col = 0; col < gridWidth; col++) {
         if (col !== curr.col) {
           candidates.push({ row: curr.row, col });
         }
       }
-    } else { // vertical move
-      const minNewRow = curr.row + 1;
-      // Ensure we leave enough rows for the remaining vertical moves.
-      const maxNewRow = gridHeight - (remainingVertical - 1);
-      for (let row = minNewRow; row < Math.min(maxNewRow, gridHeight); row++) {
+    } else { // vertical move (allow upward or downward)
+      // For vertical moves, try all rows (except the current one).
+      for (let row = 0; row < gridHeight; row++) {
+        if (row === curr.row) continue;
+        // Compute how many vertical moves remain after this move.
+        const remainingVertical = pattern.slice(index + 1).filter(m => m === 'vertical').length;
+        // Feasibility check:
+        // In the best-case scenario, assume that from the candidate we can move downward by one per vertical move.
+        // Then candidate.row + remainingVertical must be at least gridHeight - 1.
+        if (row + remainingVertical < gridHeight - 1) continue;
         candidates.push({ row, col: curr.col });
       }
     }
+    // Remove any candidate that is already in the path (to avoid cycles).
+    candidates = candidates.filter(candidate =>
+      !path.some(p => p.row === candidate.row && p.col === candidate.col)
+    );
+    // Randomize candidate order.
     candidates.sort(() => Math.random() - 0.5);
     for (let candidate of candidates) {
       path.push(candidate);
@@ -170,8 +193,9 @@ function generateWinningPathLayout(n) {
     return false;
   }
 
+  // Try up to maxPathAttempts times to generate a valid path.
   for (let attempt = 0; attempt < params.maxPathAttempts; attempt++) {
-    const pattern = randomPattern();
+    const pattern = getPattern();
     const startCol = randInt(0, gridWidth - 1);
     const path = [{ row: 0, col: startCol }];
     if (backtrack(0, { row: 0, col: startCol }, pattern, path)) {
@@ -186,12 +210,12 @@ function generateWinningPathLayout(n) {
 // ------------------------------
 
 // Generate the board with a winning path embedded.
-function generateBoard() {
+function generateBoard(requiredScore) {
   const { gridHeight, gridWidth } = params;
   // Initialize board with nulls.
   board = Array.from({ length: gridHeight }, () => Array(gridWidth).fill(null));
 
-  const seqResult = generateWinningSequence();
+  const seqResult = generateWinningSequence(requiredScore);
   if (!seqResult) {
     alert("Unable to generate a winning sequence. Please try again later.");
     gameActive = false;
@@ -199,6 +223,7 @@ function generateBoard() {
   }
   winningSequence = seqResult.seq;
   const seqLength = seqResult.length;
+
   const pathLayout = generateWinningPathLayout(seqLength);
   if (!pathLayout) {
     alert("Unable to generate a winning path layout. Please try again later.");
@@ -206,11 +231,12 @@ function generateBoard() {
     return;
   }
   winningPath = deepCopy(pathLayout);
+  // Place the winning sequence numbers along the winning path.
   winningPath.forEach((tile, index) => {
     board[tile.row][tile.col] = winningSequence[index];
     tile.value = winningSequence[index];
   });
-
+  // Fill in the remaining board.
   for (let r = 0; r < gridHeight; r++) {
     for (let c = 0; c < gridWidth; c++) {
       if (board[r][c] === null) {
@@ -429,7 +455,8 @@ function endRound(win, msg) {
     messageEl.textContent = msg + " Round Score: " + roundScore + ". Total Score: " + totalScore;
     updateHistory(roundNumber, params.minRoundScore - params.requiredPointsIncrement, roundScore, totalScore);
     roundNumber++;
-    params.minRoundScore += params.requiredPointsIncrement;
+    // increase minRoundScore but not above maxMinRoundScore
+    params.minRoundScore = Math.min(params.minRoundScore + params.requiredPointsIncrement, maxMinRoundScore);
     nextRoundBtn.style.display = 'inline-block';
   } else {
     messageEl.textContent = msg + " Round Score: " + roundScore + ". Total Score: " + totalScore + ". Game Over! Please restart.";
@@ -485,8 +512,9 @@ function startRound() {
   gameActive = true;
   nextRoundBtn.style.display = 'none';
   showSolutionBtn.style.display = 'none';
-  stopBtn.style.display = 'inline-block'; // Show the Stop button when the game starts.
-  generateBoard();
+  stopBtn.style.display = 'inline-block';
+
+  generateBoard(params.minRoundScore);
   renderBoard();
   document.querySelectorAll('.tile').forEach(tileEl => {
     tileEl.addEventListener('click', handleTileClick);
