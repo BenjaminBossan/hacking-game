@@ -50,7 +50,7 @@ Game win:
 
 ![Game win](./03-end.png)
 
-Game lose (with winning path shown):
+If you lose, you can view the winning path:
 
 ![Game lose (with winning path shown)](./04-loss.png)
 
