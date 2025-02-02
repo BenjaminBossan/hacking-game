@@ -19,18 +19,18 @@ Open the `index.html` file in your browser.
 ## Game Rules
 
 - **Grid Setup:**
-  The board consists of a 7×7 grid. Each tile displays a number between 1 and 9.
+  - The board consists of a 7×7 grid. Each tile displays a number between 1 and 9.
 
 - **Starting the Round:**
-  - The first tile you select must be in the top row.
+  - The **first tile** you select must be in the **top row**.
 
 - **Making Moves:**
   - For your second move, you may choose any tile in the same row or the same column as your first choice.
-  - From the third move onward, moves must alternate: if your previous move was horizontal (i.e., same row), the next move must be vertical (i.e., same column) and vice versa.
-  - You can only select a tile with a number equal to or higher than the number on your last selected tile.
+  - From the third move onward, moves must **alternate**: if your previous move was **horizontal** (i.e., same row), the next move must be **vertical** (i.e., same column) and vice versa.
+  - You can only select a tile with a **number equal to or higher than the number on you last selected**.
 
 - **Round End and Scoring:**
-  - The round ends when you select a tile in the bottom row.
+  - The round **ends** when you select a tile in the **bottom row**.
   - Your score is calculated as **sum of selected tile numbers × length of your path**.
   - To win the round, your score must meet or exceed the current required points (shown at the bottom). After a win, the required points increase.
   - If you run out of time, have no legal moves, or the final score is too low, you lose the round.
