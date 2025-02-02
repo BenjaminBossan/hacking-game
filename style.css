@@ -140,7 +140,7 @@ button {
 #helpModal {
   display: none; /* Hidden by default */
   position: fixed;
-  z-index: 10;
+  z-index: 20;
   left: 0;
   top: 0;
   width: 100%;
@@ -153,7 +153,7 @@ button {
   margin: 15% auto;
   padding: 20px;
   width: 80%;
-  max-width: 500px;
+  max-width: 800px;
   border-radius: 5px;
   text-align: left;  /* Ensures all text inside is left-aligned */
 }

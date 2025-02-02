@@ -1,6 +1,6 @@
 # The Hacking Game
 
-**The Hacking Game** is a browser-based puzzle game inspired by the Cyberpunk 2077 hacking mini game. You are a hacker who must breach the firewall of the system by collecting enough points on the grid. When you succeed, you move on to the next level with a higher target score.
+**The Hacking Game** is a browser-based puzzle game inspired by the [Cyberpunk 2077 hacking minigame](https://cyberpunk.fandom.com/wiki/Quickhacking). You are a hacker who must breach the firewall of the system by collecting enough points on the grid. When you succeed, you move on to the next level with a higher target score.
 
 ## How to Run the Game
 
