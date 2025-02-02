@@ -1,6 +1,6 @@
 # The Hacking Game
 
-**The Hacking Game** is a browser-based puzzle game inspired by the Cyberpunk 2077 hacking mini game. In this game, you must select tiles on grid according to a set of rules in order to form a valid path that reaches the required score. Each round becomes hard and harder, but there is always a valid solution.
+**The Hacking Game** is a browser-based puzzle game inspired by the Cyberpunk 2077 hacking mini game. You are a hacker who must breach the firewall of the system by collecting enough points on the grid. When you succeed, you move on to the next level with a higher target score.
 
 ## How to Run the Game
 
@@ -11,16 +11,10 @@ Visit: https://benjaminbossan.github.io/hacking-game/
 ### Local
 
 1. **Download or Clone the Repository:**
-   Ensure you have the three main files in your project folder:
-   - `index.html`
-   - `style.css`
-   - `script.js`
 
-2. **Open the Game:**
-   Open `index.html` in your preferred modern web browser (such as Chrome, Firefox, or Edge). No additional server or build process is required.
+`git clone https://github.com/BenjaminBossan/hacking-game.git`
 
-3. **Start Playing:**
-   Click the **"Start Game"** button to begin. Follow on-screen instructions and use the provided controls to play rounds.
+Open the `index.html` file in your browser.
 
 ## Game Rules
 
@@ -28,7 +22,7 @@ Visit: https://benjaminbossan.github.io/hacking-game/
   The board consists of a 7×7 grid. Each tile displays a number between 1 and 9.
 
 - **Starting the Round:**
-  - The game starts when you select a tile in the top row.
+  - The first tile you select must be in the top row.
 
 - **Making Moves:**
   - For your second move, you may choose any tile in the same row or the same column as your first choice.
@@ -37,9 +31,25 @@ Visit: https://benjaminbossan.github.io/hacking-game/
 
 - **Round End and Scoring:**
   - The round ends when you select a tile in the bottom row.
-  - Your score is calculated as **(sum of selected tile numbers) × (length of your path)**.
-  - To win the round, your score must meet or exceed the current required points (starting at 50). After a win, the required points increase by 50 for the next round.
-  - If you run out of time (60 seconds), have no legal moves, or finish with a score too low, you lose the round. On a loss, you must restart the game (which resets your total score). If you lose, you may click **"Show Winning Path"** to view one possible solution.
+  - Your score is calculated as **sum of selected tile numbers × length of your path**.
+  - To win the round, your score must meet or exceed the current required points (shown at the bottom). After a win, the required points increase.
+  - If you run out of time, have no legal moves, or the final score is too low, you lose the round.
+  - If you lose, you may click **"Show Winning Path"** to view one possible solution.
+
+## Screenshots
+
+Start of the game:
+![Start of the game](./01-start.png)
+
+Selecting tiles:
+![Selecting tiles](./02-middle.png)
+
+Game win:
+![Game win](./03-end.png)
+
+Game lose (with winning path shown):
+![Game lose (with winning path shown)](./04-loss.png)
+
 
 ## Developer Overview: How It Works
 
