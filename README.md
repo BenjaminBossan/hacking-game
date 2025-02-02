@@ -39,15 +39,19 @@ Open the `index.html` file in your browser.
 ## Screenshots
 
 Start of the game:
+
 ![Start of the game](./01-start.png)
 
 Selecting tiles:
+
 ![Selecting tiles](./02-middle.png)
 
 Game win:
+
 ![Game win](./03-end.png)
 
 Game lose (with winning path shown):
+
 ![Game lose (with winning path shown)](./04-loss.png)
 
 
