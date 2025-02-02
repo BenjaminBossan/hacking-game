@@ -28,6 +28,7 @@ let timerInterval = null;
 let timeLeft = params.roundTime;
 let totalScore = 0;
 let roundScore = 0;
+let currentRequiredScore = params.minRoundScore;
 let gameActive = false;  // round is in progress
 let roundNumber = 1; // Global round counter
 let gameStopped = false;
@@ -453,20 +454,20 @@ function endRound(win, msg) {
   if (win) {
     totalScore += roundScore;
     messageEl.textContent = msg + " Round Score: " + roundScore + ". Total Score: " + totalScore;
-    updateHistory(roundNumber, params.minRoundScore - params.requiredPointsIncrement, roundScore, totalScore);
+    updateHistory(roundNumber, currentRequiredScore, roundScore, totalScore);
     roundNumber++;
     // increase minRoundScore but not above maxMinRoundScore
     params.minRoundScore = Math.min(params.minRoundScore + params.requiredPointsIncrement, maxMinRoundScore);
     nextRoundBtn.style.display = 'inline-block';
   } else {
     messageEl.textContent = msg + " Round Score: " + roundScore + ". Total Score: " + totalScore + ". Game Over! Please restart.";
-    updateHistory(roundNumber, params.minRoundScore, roundScore, totalScore);
+    updateHistory(roundNumber, currentRequiredScore, roundScore, totalScore);
     nextRoundBtn.style.display = 'none';
     showSolutionBtn.style.display = 'inline-block';
-    gameOver = true;  // Mark that the game has ended because you lost.
+    gameOver = true;
   }
-  updateHighScore(); // Update high score in localStorage if necessary.
-  displayHighScore(); // Optionally update your UI with the new high score.
+  updateHighScore();
+  displayHighScore();
 }
 
 function startTimer() {
@@ -504,7 +505,8 @@ function revealWinningPath() {
 // Game Initialization and Reset
 // ------------------------------
 function startRound() {
-  requiredPointsEl.textContent = params.minRoundScore;
+  currentRequiredScore = params.minRoundScore;
+  requiredPointsEl.textContent = currentRequiredScore;
   selectedPath = [];
   roundScore = 0;
   scoreBreakdownEl.textContent = "0 x 0 = 0";
@@ -514,7 +516,7 @@ function startRound() {
   showSolutionBtn.style.display = 'none';
   stopBtn.style.display = 'inline-block';
 
-  generateBoard(params.minRoundScore);
+  generateBoard(currentRequiredScore);
   renderBoard();
   document.querySelectorAll('.tile').forEach(tileEl => {
     tileEl.addEventListener('click', handleTileClick);
