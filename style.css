@@ -58,6 +58,16 @@ button {
   /* grid-template-columns is set dynamically in script.js */
 }
 
+#overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;  /* Add this line to ensure the overlay is on top */
+}
+
 /* Score history styling: place it below the board */
 #scoreHistory {
   max-width: 300px;
