@@ -54,13 +54,16 @@
       <h2>How to Play</h2>
       <p><strong>Game Rules:</strong></p>
       <ul>
-        <li>The board is a grid. Each tile shows a number (1–9).</li>
+        <li>The board is a grid of tiles (7×7 by default), and each tile shows a number between 1 and 9.</li>
         <li>Start by choosing a tile in the top row.</li>
-        <li>For your second move, choose a tile either in the same row or the same column as your first choice. Then moves alternate: if the previous move was horizontal, the next must be vertical, and vice versa.</li>
-        <li>You can only select a tile whose number is equal to or higher than the last selected tile.</li>
+        <li>Your second move may be in the same row or same column as your first move. Then, moves must alternate between horizontal and vertical.</li>
+        <li>You can only select a tile whose number is equal to or greater than the last tile you selected.</li>
+        <li>Vertical moves can go upward or downward (provided the destination tile is unoccupied), but the sequence must eventually reach the bottom row.</li>
         <li>The round ends when you select a tile in the bottom row.</li>
-        <li>Your score is computed as (sum of selected tile numbers) × (length of your path). You need to meet the required score to win the round.</li>
-        <li>If no legal move remains or time (60 seconds) runs out, you lose the round and must restart the game.</li>
+        <li>Your score is calculated as the (sum of selected tile numbers) multiplied by the (length of your path).</li>
+        <li>Each round has a required score that you must meet or exceed, which increases after every successful round. It is shown at the bottom of the screen.</li>
+        <li>If no legal move remains or time (45 seconds) expires, you lose the round and must restart the game.</li>
+        <li>If you lose, you can view the winning path using the "Show Winning Path" button.</li>
       </ul>
       <button id="closeHelpBtn">Close</button>
     </div>

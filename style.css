@@ -128,7 +128,7 @@ button {
 
 /* Help modal styling */
 #helpModal {
-  display: none;
+  display: none; /* Hidden by default */
   position: fixed;
   z-index: 10;
   left: 0;
@@ -145,17 +145,14 @@ button {
   width: 80%;
   max-width: 500px;
   border-radius: 5px;
+  text-align: left;  /* Ensures all text inside is left-aligned */
 }
 #helpContent h2 {
   margin-top: 0;
+  text-align: center; /* Optionally, center the title */
 }
-
-/* Overlay for drawing the path */
-#overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
+#helpContent p,
+#helpContent ul,
+#helpContent li {
+  text-align: left;
 }
