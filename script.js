@@ -1,17 +1,23 @@
 // ------------------------------
 // Parameter Object & Constants
 // ------------------------------
+
+const initialGridWidth = 7;
+const initialGridHeight = 7;
+const initialRoundTime = 45; // seconds per round
 const initialMinRoundScore = 100;
-const maxMinRoundScore = 2000;
+const maxMinRoundScore = 2000;  // score req is increased each round but capped at this value
+const initialRequiredPointsIncrement = 100;
+
 const params = {
-  gridWidth: 7,
-  gridHeight: 7,
+  gridWidth: initialGridWidth,
+  gridHeight: initialGridHeight,
   minTileValue: 1,
   maxTileValue: 9,
-  roundTime: 45, // seconds per round
+  roundTime: initialRoundTime,
   minRoundScore: initialMinRoundScore,
   requiredPointsIncrement: 100,
-  minPathLength: 7,
+  minPathLength: 6,
   maxPathLength: 12,
   maxSequenceAttempts: 1000,
   maxPathAttempts: 1000
@@ -282,6 +288,7 @@ function drawPath(pathArray) {
   polyline.setAttribute("fill", "none");
   polyline.setAttribute("stroke", "red");
   polyline.setAttribute("stroke-width", "4");
+  polyline.setAttribute("stroke-opacity", "0.5");
   const boardContainer = document.getElementById('boardContainer');
   const containerRect = boardContainer.getBoundingClientRect();
   let points = "";
@@ -444,6 +451,33 @@ function displayHighScore() {
   document.getElementById('highScore').textContent = highScore;
 }
 
+function updateDifficulty(roundNumber) {
+  // increase minRoundScore but not above maxMinRoundScore
+  params.minRoundScore = Math.min(params.minRoundScore + params.requiredPointsIncrement, maxMinRoundScore);
+
+  const num = 5;
+  if (roundNumber === num + 1) {
+    params.roundTime += 5;
+  } else if (roundNumber === 2 * num + 1) {
+    params.roundTime += 5;
+    params.gridWidth += 1;
+  } else if (roundNumber === 3 * num + 1) {
+    params.roundTime += 5;
+  } else if (roundNumber === 4 * num + 1) {
+    params.roundTime += 5;
+    params.gridHeight += 1;
+  }
+
+  console.log(params);
+}
+
+function resetDifficulty() {
+  params.minRoundScore = initialMinRoundScore;
+  params.roundTime = initialRoundTime;
+  params.gridWidth = initialGridWidth;
+  params.gridHeight = initialGridHeight;
+}
+
 function endRound(win, msg) {
   gameActive = false;
   clearInterval(timerInterval);
@@ -456,8 +490,8 @@ function endRound(win, msg) {
     messageEl.textContent = msg + " Round Score: " + roundScore + ". Total Score: " + totalScore;
     updateHistory(roundNumber, currentRequiredScore, roundScore, totalScore);
     roundNumber++;
-    // increase minRoundScore but not above maxMinRoundScore
-    params.minRoundScore = Math.min(params.minRoundScore + params.requiredPointsIncrement, maxMinRoundScore);
+    // increase difficulty
+    updateDifficulty(roundNumber);
     nextRoundBtn.style.display = 'inline-block';
   } else {
     messageEl.textContent = msg + " Round Score: " + roundScore + ". Total Score: " + totalScore + ". Game Over! Please restart.";
@@ -538,6 +572,7 @@ function restartGame() {
   // Reset game flags.
   gameStopped = false;
   gameOver = false;
+  resetDifficulty();
   startRound();
 }
 
