@@ -110,6 +110,15 @@ header h1 {
   }
 }
 
+@keyframes pulsateGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 5px #FFFF44);
+  }
+  50% {
+    filter: drop-shadow(0 0 10px #FFFF44);
+  }
+}
+
 /* Scoreboard and high score display styling */
 #scoreboard {
   margin-top: 10px;
@@ -149,7 +158,7 @@ header h1 {
   background-color: #333;
 }
 #historyTable tr.fail {
-  background-color: #ff0033;
+  background-color: #131313;
   color: #fff;
 }
 

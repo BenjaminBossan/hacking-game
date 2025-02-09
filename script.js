@@ -307,18 +307,18 @@ function drawPath(pathArray) {
   overlayEl.appendChild(polyline);
 
   // Animate the drawing:
-  // Measure the total length of the polyline.
   const polylineLength = polyline.getTotalLength();
-  // Set the stroke-dasharray and stroke-dashoffset to the total length.
   polyline.style.strokeDasharray = polylineLength;
   polyline.style.strokeDashoffset = polylineLength;
-  // Set a CSS custom property for the line length (used in our keyframes)
   polyline.style.setProperty('--line-length', polylineLength);
-  // Trigger the animation (adjust duration and easing as desired)
-  //polyline.style.animation = "drawLine 1s ease-out forwards";
-  // ensure constant speed
+
+  // Ensure constant speed (adjust constants as desired)
   const duration = 0.5 + (polylineLength / 500);
-  polyline.style.animation = `drawLine ${duration}s ease-out forwards`;
+
+  // Combine two animations:
+  // - drawLine: draws the line (duration based on polyline length)
+  // - pulsateGlow: continuously pulsates the glow effect (2s cycle, infinite)
+  polyline.style.animation = `drawLine ${duration}s ease-out forwards, pulsateGlow 2s ease-in-out infinite`;
 }
 
 // ------------------------------
