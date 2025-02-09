@@ -1,42 +1,64 @@
 /* Base reset */
+:root {
+  --timer-default-color: #00ffea;
+}
+
 * {
   box-sizing: border-box;
-  font-family: sans-serif;
-}
-
-/* Center the page content */
-body {
-  background: #f0f0f0;
   margin: 0;
-  padding: 20px;
-  text-align: center;  /* Centers h1 and controls */
+  padding: 0;
 }
 
-h1, .controls {
-  margin: 0 auto;
+/* Overall body style */
+body {
+  font-family: 'Roboto Mono', monospace;
+  background: linear-gradient(135deg, #121212, #1e1e1e);
+  color: #e0e0e0;
+  text-align: center;
+  padding: 20px;
+}
+
+/* Header styling */
+header h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  color: #00ffff;
+  text-shadow: 0 0 10px #00ffff;
 }
 
 /* Controls styling */
 .controls {
-  margin-bottom: 10px;
+  margin: 10px auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
 }
-
-/* Button styling */
-button {
-  padding: 8px 12px;
-  margin: 5px;
+.controls button {
+  background: #222;
+  color: #00ffea;
+  border: 2px solid #00ffea;
+  padding: 10px 15px;
   font-size: 1rem;
-  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.3s, transform 0.3s;
+}
+.controls button:hover {
+  background: #00ffea;
+  color: #222;
+  transform: scale(1.05);
 }
 
-/* Timer styling */
 #timer {
   font-size: 1.2rem;
-  margin: 10px;
   font-weight: bold;
+  align-self: center;
+  color: var(--timer-default-color);
+  text-shadow: 0 0 10px var(--timer-default-color);
 }
 
-/* Game container: use block layout to stack board and history vertically */
+/* Game container: only the board, centered */
 .game-container {
   width: 100%;
   margin: 20px auto;
@@ -45,7 +67,7 @@ button {
 /* Board container */
 #boardContainer {
   position: relative;
-  margin: 0 auto;  /* centers the container */
+  margin: 0 auto;
   text-align: center;
   /* The width is set dynamically by JS */
 }
@@ -54,10 +76,12 @@ button {
 #board {
   display: grid;
   gap: 2px;
-  margin: 0 auto; /* ensure grid is centered within boardContainer */
+  margin: 0 auto;
+  transition: transform 0.3s;
   /* grid-template-columns is set dynamically in script.js */
 }
 
+/* Overlay for drawing the path */
 #overlay {
   position: absolute;
   top: 0;
@@ -65,10 +89,27 @@ button {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 10;  /* Add this line to ensure the overlay is on top */
+  z-index: 10;
 }
 
-/* Score history styling: place it below the board */
+/* Scoreboard and high score display styling */
+#scoreboard {
+  margin-top: 10px;
+  font-size: 1.1rem;
+}
+#highScoreDisplay {
+  margin-top: 10px;
+  font-size: 1.1rem;
+  color: #00ffea;
+}
+#message {
+  margin-top: 10px;
+  font-size: 1.2rem;
+  color: #ff0033;
+  font-weight: bold;
+}
+
+/* Score history styling: now placed at the very bottom */
 #scoreHistory {
   max-width: 300px;
   margin: 20px auto 0;
@@ -77,68 +118,58 @@ button {
 #historyTable {
   width: 100%;
   border-collapse: collapse;
+  background: #222;
+  border: 1px solid #00ffea;
 }
 #historyTable th, #historyTable td {
-  border: 1px solid #ccc;
+  border: 1px solid #00ffea;
   padding: 8px;
   text-align: center;
+  font-size: 0.9rem;
 }
 #historyTable th {
-  background-color: #eee;
+  background-color: #333;
 }
 #historyTable tr.fail {
-  background-color: #f8d7da;
-  color: #721c24;
+  background-color: #ff0033;
+  color: #fff;
 }
 
-/* Tile styling */
+/* Board Tiles */
 .tile {
-  background: #ddd;
+  background: #333;
   width: 50px;
   height: 50px;
   line-height: 50px;
-  text-align: center;
   font-size: 1.2rem;
+  color: #e0e0e0;
   user-select: none;
   position: relative;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 0.2s;
 }
-.tile-top {
-  background: #bbb;
+.tile:hover {
+  transform: scale(1.05);
 }
-.tile-bottom {
-  background: #bbb;
+.tile-top, .tile-bottom {
+  background: #444;
 }
 .tile.selected {
-  background: #4caf50 !important;
-  color: #fff;
+  background: #00ffea !important;
+  color: #222;
+  box-shadow: 0 0 10px #00ffea;
 }
 .tile.legal {
-  outline: 3px solid #ff9800;
+  outline: 2px solid #00ffea;
 }
 .tile.solution {
-  background: #2196f3 !important;
-  color: #fff;
+  background: #ff00ff !important;
+  color: #222;
+  box-shadow: 0 0 10px #ff00ff;
 }
 
-/* Scoreboard styling */
-#scoreboard {
-  text-align: center;
-  margin-top: 10px;
-  font-size: 1.1rem;
-}
-
-/* Message styling */
-#message {
-  text-align: center;
-  color: red;
-  font-weight: bold;
-  margin-top: 10px;
-}
-
-/* Help modal styling */
+/* Help Modal styling */
 #helpModal {
-  display: none; /* Hidden by default */
+  display: none;
   position: fixed;
   z-index: 20;
   left: 0;
@@ -146,23 +177,81 @@ button {
   width: 100%;
   height: 100%;
   overflow: auto;
-  background-color: rgba(0,0,0,0.5);
+  background-color: rgba(0,0,0,0.85);
 }
 #helpContent {
-  background: #fff;
-  margin: 15% auto;
+  background: #111;
+  margin: 10% auto;
   padding: 20px;
-  width: 80%;
-  max-width: 800px;
-  border-radius: 5px;
-  text-align: left;  /* Ensures all text inside is left-aligned */
+  width: 90%;
+  max-width: 600px;
+  border-radius: 8px;
+  color: #e0e0e0;
+  text-align: left;
+  box-shadow: 0 0 20px #00ffea;
 }
 #helpContent h2 {
-  margin-top: 0;
-  text-align: center; /* Optionally, center the title */
+  font-family: 'Orbitron', sans-serif;
+  text-align: center;
+  color: #00ffff;
+  margin-bottom: 10px;
 }
 #helpContent p,
 #helpContent ul,
 #helpContent li {
-  text-align: left;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+#helpContent ul {
+  list-style: disc inside;
+  margin-left: 20px;
+}
+#helpContent a {
+  color: #00ffea;
+  text-decoration: none;
+}
+#helpContent a:hover {
+  text-decoration: underline;
+}
+#helpContent button {
+  display: block;
+  margin: 20px auto 0;
+  padding: 10px 20px;
+  background: #00ffea;
+  color: #222;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.3s;
+}
+#helpContent button:hover {
+  background: #00ffff;
+  transform: scale(1.05);
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+  header h1 {
+    font-size: 2rem;
+  }
+  .controls button {
+    font-size: 0.9rem;
+    padding: 8px 10px;
+  }
+  #board .tile {
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    font-size: 1rem;
+  }
+  #scoreHistory {
+    max-width: 100%;
+  }
+  #helpContent {
+    width: 95%;
+    max-width: 90%;
+  }
 }

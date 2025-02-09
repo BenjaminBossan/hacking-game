@@ -2,11 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>The Hacking Game</title>
+  <!-- Google Fonts for a cyberpunk feel -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>The Hacking Game</h1>
+  <header>
+    <h1>The Hacking Game</h1>
+  </header>
+
   <div class="controls">
     <button id="startBtn">Start Game</button>
     <button id="restartBtn">Restart Game</button>
@@ -17,55 +23,57 @@
     <div id="timer">Time: 45</div>
   </div>
 
-  <!-- Container for board and history -->
+  <!-- Game container: only the board -->
   <div class="game-container">
     <div id="boardContainer">
       <div id="board"></div>
       <svg id="overlay"></svg>
     </div>
-    <div id="scoreHistory">
-      <table id="historyTable">
-        <thead>
-          <tr>
-            <th>Round</th>
-            <th>Min Score</th>
-            <th>Achieved Score</th>
-            <th>Cumulative Score</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- History rows appended dynamically -->
-        </tbody>
-      </table>
-    </div>
   </div>
 
-  <div id="message"></div>
+  <!-- Score and high score display -->
   <div id="scoreboard">
     Round Score: <span id="scoreBreakdown">0 x 0 = 0</span> |
     Required Points: <span id="requiredPoints">100</span> |
     Total Score: <span id="totalScore">0</span>
   </div>
   <div id="highScoreDisplay">High Score: <span id="highScore">0</span></div>
+  <div id="message"></div>
+
+  <!-- Score history is now at the very bottom -->
+  <div id="scoreHistory">
+    <table id="historyTable">
+      <thead>
+        <tr>
+          <th>Round</th>
+          <th>Min Score</th>
+          <th>Achieved Score</th>
+          <th>Cumulative Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- History rows appended dynamically -->
+      </tbody>
+    </table>
+  </div>
 
   <!-- Help Modal -->
   <div id="helpModal">
     <div id="helpContent">
       <h2>How to Play</h2>
-      <p><strong>Game Rules:</strong></p>
       <ul>
-        <li>The Hacking Game is puzzle game inspired by the <a href="https://cyberpunk.fandom.com/wiki/Quickhacking">Cyberpunk 2077 hacking minigame</a>. You are a hacker who must breach the firewall of the system by collecting enough points on the grid. When you succeed, you move on to the next level with a higher target score.</li>
-        <li>The board is a grid of tiles (7×7 by default), and each tile shows a number between 1 and 9.</li>
-        <li>Start by choosing a tile in the top row.</li>
-        <li>Your second move may be in the same row or same column as your first move. Then, moves must alternate between horizontal and vertical.</li>
-        <li>You can only select a tile whose number is equal to or greater than the last tile you selected.</li>
-        <li>Vertical moves can go upward or downward (provided the destination tile is unoccupied), but the sequence must eventually reach the bottom row.</li>
+        <li>The Hacking Game is a puzzle game inspired by the <a href="https://cyberpunk.fandom.com/wiki/Quickhacking">Cyberpunk 2077 hacking minigame</a>. You are a hacker trying to breach a secure system.</li>
+        <li>The board is a grid of tiles (7×7 by default), with each tile showing a number between 1 and 9.</li>
+        <li>Begin by selecting a tile in the top row.</li>
+        <li>Your second move can be in the same row or column as your first; then moves alternate between horizontal and vertical.</li>
+        <li>You may only select a tile whose number is equal to or greater than your last selected tile.</li>
+        <li>You cannot select the same tile twice
         <li>The round ends when you select a tile in the bottom row.</li>
-        <li>Your score is calculated as the sum of selected tile numbers × by the length of your path.</li>
-        <li>Each round has a required score that you must meet or exceed, which increases after every successful round. It is shown at the bottom of the screen.</li>
-        <li>If no legal move remains or time (45 seconds) expires, you lose the round and must restart the game.</li>
+        <li>Your score equals the sum of your selected tile numbers multiplied by the length of your path.</li>
+        <li>Each round has a required score that increases after every win.</li>
+        <li>If no legal move remains or time (45 seconds) expires, you lose the round and must restart.</li>
         <li>If you lose, you can view the winning path using the "Show Winning Path" button.</li>
-        <li>Source code <a href="https://github.com/BenjaminBossan/hacking-game">GitHub</a>.</li>
+        <li>Source code is available on <a href="https://github.com/BenjaminBossan/hacking-game" target="_blank">GitHub</a>.</li>
       </ul>
       <button id="closeHelpBtn">Close</button>
     </div>

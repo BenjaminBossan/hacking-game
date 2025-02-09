@@ -16,7 +16,7 @@ const params = {
   maxTileValue: 9,
   roundTime: initialRoundTime,
   minRoundScore: initialMinRoundScore,
-  requiredPointsIncrement: 100,
+  requiredPointsIncrement: initialRequiredPointsIncrement,
   minPathLength: 6,
   maxPathLength: 12,
   maxSequenceAttempts: 1000,
@@ -286,7 +286,7 @@ function drawPath(pathArray) {
   if (pathArray.length === 0) return;
   const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
   polyline.setAttribute("fill", "none");
-  polyline.setAttribute("stroke", "red");
+  polyline.setAttribute("stroke", "#39FF14");
   polyline.setAttribute("stroke-width", "4");
   polyline.setAttribute("stroke-opacity", "0.5");
   const boardContainer = document.getElementById('boardContainer');
@@ -507,11 +507,20 @@ function endRound(win, msg) {
 function startTimer() {
   timeLeft = params.roundTime;
   timerEl.textContent = "Time: " + timeLeft;
-  timerEl.style.color = "#000";
+
+  // Read the CSS custom property from the root element.
+  const rootStyles = getComputedStyle(document.documentElement);
+  const timerDefaultColor = rootStyles.getPropertyValue('--timer-default-color').trim();
+
+  // Set the timer's color to the value from the CSS variable.
+  timerEl.style.color = timerDefaultColor;
+
   timerInterval = setInterval(() => {
     timeLeft--;
     timerEl.textContent = "Time: " + timeLeft;
-    if (timeLeft <= 10) timerEl.style.color = "red";
+    if (timeLeft <= 10) {
+      timerEl.style.color = "red";  // Hardcoded red for urgency
+    }
     if (timeLeft <= 0) {
       clearInterval(timerInterval);
       endRound(false, "Time's up!");
