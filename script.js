@@ -502,9 +502,16 @@ function endRound(win, msg) {
   displayHighScore();
 }
 
+function formatTime(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  // Always show two digits for minutes and seconds.
+  return `${minutes < 10 ? "0" : ""}${minutes}:${secs < 10 ? "0" : ""}${secs}`;
+}
+
 function startTimer() {
   timeLeft = params.roundTime;
-  timerEl.textContent = "Time: " + timeLeft;
+  timerEl.textContent = "Time: " + formatTime(timeLeft);
 
   // Read the CSS custom property from the root element.
   const rootStyles = getComputedStyle(document.documentElement);
@@ -515,7 +522,7 @@ function startTimer() {
 
   timerInterval = setInterval(() => {
     timeLeft--;
-    timerEl.textContent = "Time: " + timeLeft;
+    timerEl.textContent = "Time: " + formatTime(timeLeft);
     if (timeLeft <= 10) {
       timerEl.style.color = "red";  // Hardcoded red for urgency
     }

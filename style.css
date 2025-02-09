@@ -60,11 +60,11 @@ header h1 {
 }
 
 #timer {
-  font-size: 1.2rem;
-  font-weight: bold;
-  align-self: center;
+  font-family: var(--timer-font), monospace;
+  font-size: 2rem;
   color: var(--timer-default-color);
-  text-shadow: 0 0 10px var(--timer-default-color);
+  text-shadow: 0 0 8px var(--timer-default-color);
+  display: inline-block;
 }
 
 /* Game container: only the board, centered */
