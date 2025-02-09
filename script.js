@@ -556,9 +556,7 @@ function startTimer() {
 function revealWinningPath() {
   winningPath.forEach(tile => {
     const tileEl = getTileEl(tile.row, tile.col);
-    if (!tileEl.classList.contains('selected')) {
-      tileEl.classList.add('solution');
-    }
+    tileEl.classList.add('solution');
   });
   drawPath(winningPath);
   messageEl.textContent += " (Displayed is one possible solution.)";

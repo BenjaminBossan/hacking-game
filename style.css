@@ -193,6 +193,11 @@ header h1 {
   color: #222;
   box-shadow: 0 0 10px #ff00ff;
 }
+.tile.selected.solution {
+  background: #8989dd !important;
+  color: #222 !important;
+  box-shadow: 0 0 10px #8989dd !important;
+}
 
 /* Help Modal styling */
 #helpModal {
