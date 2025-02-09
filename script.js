@@ -286,7 +286,7 @@ function drawPath(pathArray) {
   if (pathArray.length === 0) return;
   const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
   polyline.setAttribute("fill", "none");
-  polyline.setAttribute("stroke", "#39FF14");
+  polyline.setAttribute("stroke", "#FFFF44");
   polyline.setAttribute("stroke-width", "4");
   polyline.setAttribute("stroke-opacity", "0.5");
   const boardContainer = document.getElementById('boardContainer');
@@ -467,8 +467,6 @@ function updateDifficulty(roundNumber) {
     params.roundTime += 5;
     params.gridHeight += 1;
   }
-
-  console.log(params);
 }
 
 function resetDifficulty() {
