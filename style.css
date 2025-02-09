@@ -101,6 +101,15 @@ header h1 {
   z-index: 10;
 }
 
+@keyframes drawLine {
+  from {
+    stroke-dashoffset: var(--line-length);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 /* Scoreboard and high score display styling */
 #scoreboard {
   margin-top: 10px;

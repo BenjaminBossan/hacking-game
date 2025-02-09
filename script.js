@@ -289,6 +289,7 @@ function drawPath(pathArray) {
   polyline.setAttribute("stroke", "#FFFF44");
   polyline.setAttribute("stroke-width", "4");
   polyline.setAttribute("stroke-opacity", "0.5");
+
   const boardContainer = document.getElementById('boardContainer');
   const containerRect = boardContainer.getBoundingClientRect();
   let points = "";
@@ -296,6 +297,7 @@ function drawPath(pathArray) {
     const tileEl = document.querySelector(`.tile[data-row="${tile.row}"][data-col="${tile.col}"]`);
     if (tileEl) {
       const rect = tileEl.getBoundingClientRect();
+      // Calculate the center of the tile relative to the boardContainer.
       const cx = rect.left - containerRect.left + rect.width / 2;
       const cy = rect.top - containerRect.top + rect.height / 2;
       points += `${cx},${cy} `;
@@ -303,6 +305,20 @@ function drawPath(pathArray) {
   });
   polyline.setAttribute("points", points.trim());
   overlayEl.appendChild(polyline);
+
+  // Animate the drawing:
+  // Measure the total length of the polyline.
+  const polylineLength = polyline.getTotalLength();
+  // Set the stroke-dasharray and stroke-dashoffset to the total length.
+  polyline.style.strokeDasharray = polylineLength;
+  polyline.style.strokeDashoffset = polylineLength;
+  // Set a CSS custom property for the line length (used in our keyframes)
+  polyline.style.setProperty('--line-length', polylineLength);
+  // Trigger the animation (adjust duration and easing as desired)
+  //polyline.style.animation = "drawLine 1s ease-out forwards";
+  // ensure constant speed
+  const duration = 0.5 + (polylineLength / 500);
+  polyline.style.animation = `drawLine ${duration}s ease-out forwards`;
 }
 
 // ------------------------------
