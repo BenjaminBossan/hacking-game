@@ -39,6 +39,7 @@ let gameActive = false;  // round is in progress
 let roundNumber = 1; // Global round counter
 let gameStopped = false;
 let gameOver = false;
+let soundEnabled = true;
 
 // ------------------------------
 // DOM Elements
@@ -64,6 +65,69 @@ document.addEventListener('DOMContentLoaded', () => {
   const containerWidth = (tileSize * params.gridWidth) + (gap * (params.gridWidth - 1));
   document.getElementById('boardContainer').style.width = containerWidth + 'px';
   displayHighScore();
+});
+
+// ------------------------------
+// Audio Setup
+// ------------------------------
+
+// Create one global AudioContext.
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playBlip(pathLength) {
+  if (!soundEnabled) return;
+
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+
+  // Base frequency of 400 Hz, increase 50 Hz per tile (adjust as desired)
+  oscillator.frequency.value = 400 + (pathLength * 15);
+  oscillator.type = 'sine';
+
+  // Set the initial volume.
+  const initialGain = 0.2;
+  gainNode.gain.setValueAtTime(initialGain, audioCtx.currentTime);
+
+  oscillator.start();
+
+  // Schedule a smooth fade-out
+  // Note: Exponential ramp requires a nonzero target value.
+  gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+
+  // Stop the oscillator slightly after the ramp completes.
+  oscillator.stop(audioCtx.currentTime + 0.20);
+}
+
+// Play a "lose" sound when the player loses.
+function playLoseSound() {
+  if (!soundEnabled) return;
+
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+
+  oscillator.frequency.value = 50;  // Lower tone for loss
+  oscillator.type = 'sawtooth';
+  gainNode.gain.value = 0.05;
+
+  oscillator.start();
+  oscillator.stop(audioCtx.currentTime + 0.5);  // Play for 500 ms
+}
+
+const toggleSoundBtn = document.getElementById('toggleSound');
+
+toggleSoundBtn.addEventListener('click', () => {
+  soundEnabled = !soundEnabled;
+  if (soundEnabled) {
+    toggleSoundBtn.classList.add('active');
+  } else {
+    toggleSoundBtn.classList.remove('active');
+  }
 });
 
 // ------------------------------
@@ -423,6 +487,8 @@ function handleTileClick(e) {
   if (!isLegalMove(row, col)) return;
   const value = board[row][col];
   selectedPath.push({ row, col, value });
+  playBlip(selectedPath.length);
+
   tileEl.classList.add('selected');
   updateRoundScoreDisplay();
   if (row === params.gridHeight - 1) {
@@ -431,6 +497,7 @@ function handleTileClick(e) {
       endRound(true, "Round completed successfully!");
     } else {
       endRound(false, "Round finished, but score is too low.");
+      playLoseSound();
     }
     drawPath(selectedPath);
     return;
@@ -498,13 +565,12 @@ function endRound(win, msg) {
   document.querySelectorAll('.tile.legal').forEach(el => {
     el.classList.remove('legal');
   });
-  stopBtn.style.display = 'none'; // Hide the Stop button when the round ends.
+  stopBtn.style.display = 'none';
   if (win) {
     totalScore += roundScore;
     messageEl.textContent = msg + " Round Score: " + roundScore + ". Total Score: " + totalScore;
     updateHistory(roundNumber, currentRequiredScore, roundScore, totalScore);
     roundNumber++;
-    // increase difficulty
     updateDifficulty(roundNumber);
     nextRoundBtn.style.display = 'inline-block';
   } else {
@@ -513,6 +579,7 @@ function endRound(win, msg) {
     nextRoundBtn.style.display = 'none';
     showSolutionBtn.style.display = 'inline-block';
     gameOver = true;
+    playLoseSound();
   }
   updateHighScore();
   displayHighScore();

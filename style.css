@@ -48,7 +48,7 @@ header h1 {
   background: #222;
   color: #00ffea;
   border: 2px solid #00ffea;
-  padding: 10px 15px;
+  padding: 5px 10px;
   font-size: 1rem;
   border-radius: 4px;
   transition: background 0.3s, transform 0.3s;
@@ -197,6 +197,24 @@ header h1 {
   background: #8989dd !important;
   color: #222 !important;
   box-shadow: 0 0 10px #8989dd !important;
+}
+
+/* Style for the sound toggle button */
+#toggleSound {
+  background: #222;
+  color: #00ffea;
+  border: 2px solid #00ffea;
+  padding: 10px 15px;
+  font-size: 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.3s;
+}
+
+/* When sound is enabled, highlight the button */
+#toggleSound.active {
+  background: #00ffea;
+  color: #222;
 }
 
 /* Help Modal styling */
