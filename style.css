@@ -9,13 +9,22 @@
   padding: 0;
 }
 
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 /* Overall body style */
 body {
   font-family: 'Roboto Mono', monospace;
-  background: linear-gradient(135deg, #121212, #1e1e1e);
   color: #e0e0e0;
   text-align: center;
   padding: 20px;
+  min-height: 100vh; /* Ensure the body is at least the viewport height */
+  background: linear-gradient(135deg, #121212, #1e1e1e);
+  background-size: cover; /* Cover the entire viewport */
+  background-attachment: fixed; /* Keep the background fixed during scroll */
 }
 
 /* Header styling */
