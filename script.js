@@ -631,6 +631,62 @@ function revealWinningPath() {
 }
 
 // ------------------------------
+// Score preview
+// ------------------------------
+
+let tooltipTimeout;
+
+function showTooltipForTile(tileEl) {
+  // Compute potential score: if the tile's value is added,
+  // potential score = (current sum + tileValue) * (current count + 1).
+  const tileValue = parseInt(tileEl.textContent);
+  const currentSum = selectedPath.reduce((acc, tile) => acc + tile.value, 0);
+  const newCount = selectedPath.length + 1;
+  const potentialScore = (currentSum + tileValue) * newCount;
+
+  // Position the tooltip near the tile.
+  const rect = tileEl.getBoundingClientRect();
+  const tooltip = document.getElementById('tooltip');
+  tooltip.textContent = `${potentialScore}`;
+
+  // Position tooltip above the tile if possible.
+  tooltip.style.left = rect.left + (rect.width / 2) + 'px';
+  tooltip.style.top = (rect.top - 10) + 'px'; // 10px above the tile
+  tooltip.style.display = 'block';
+  // Fade in:
+  setTimeout(() => {
+    tooltip.style.opacity = '1';
+  }, 50);
+}
+
+function hideTooltip() {
+  const tooltip = document.getElementById('tooltip');
+  tooltip.style.opacity = '0';
+  // Hide after fade-out.
+  setTimeout(() => {
+    tooltip.style.display = 'none';
+  }, 200);
+}
+
+// Use event delegation on the board.
+boardEl.addEventListener('mouseover', (e) => {
+  // Only show tooltip if the hovered element is a legal tile.
+  const tileEl = e.target.closest('.tile.legal');
+  if (tileEl) {
+    // Set a timeout of 0.5 seconds before showing the tooltip.
+    tooltipTimeout = setTimeout(() => {
+      showTooltipForTile(tileEl);
+    }, 500);
+  }
+});
+
+boardEl.addEventListener('mouseout', (e) => {
+  // When the mouse leaves a tile, clear the timeout and hide the tooltip.
+  clearTimeout(tooltipTimeout);
+  hideTooltip();
+});
+
+// ------------------------------
 // Game Initialization and Reset
 // ------------------------------
 function startRound() {
