@@ -1,6 +1,6 @@
-# The Hacking Game
+# The Matrix Breach
 
-**The Hacking Game** is a browser-based puzzle game inspired by the [Cyberpunk 2077 hacking minigame](https://cyberpunk.fandom.com/wiki/Quickhacking). You are a hacker who must breach the firewall of the system by collecting enough points on the grid. When you succeed, you move on to the next level with a higher target score.
+**The Matrix Breach** is a browser-based puzzle game inspired by the [Cyberpunk 2077 hacking minigame](https://cyberpunk.fandom.com/wiki/Quickhacking). You are a hacker who must breach the system by collecting enough points on the matrix. When you succeed to breach the matrix, you move on to the next level with a higher target score.
 
 ## How to Run the Game
 
@@ -19,12 +19,10 @@ Open the `index.html` file in your browser.
 ## Game Rules
 
 - **Grid Setup:**
-  - The board consists of a 7×7 grid. Each tile displays a number between 1 and 9.
-
-- **Starting the Round:**
-  - The **first tile** you select must be in the **top row**.
+  - The matrix consists of a 7×7 grid. Each tile displays a number between 1 and 9.
 
 - **Making Moves:**
+  - The **first tile** you select must be in the **top row**.
   - For your second move, you may choose any tile in the same row or the same column as your first choice.
   - From the third move onward, moves must **alternate**: if your previous move was **horizontal** (i.e., same row), the next move must be **vertical** (i.e., same column) and vice versa.
   - You can only select a tile with a **number equal to or higher than the number on you last selected**.
@@ -35,6 +33,13 @@ Open the `index.html` file in your browser.
   - To win the round, your score must meet or exceed the current required points (shown at the bottom). After a win, the required points increase.
   - If you run out of time, have no legal moves, or the final score is too low, you lose the round.
   - If you lose, you may click **"Show Winning Path"** to view one possible solution.
+
+- **Chase new high scores**
+  - After each win, the next breach becomes more difficult.
+  - Beat your high score by breaching deeper and deeper.
+
+- **Tip**
+  - Hover over a tile to preview the score.
 
 ## Screenshots
 
@@ -52,7 +57,7 @@ Game win:
 
 If you lose, you can view the winning path:
 
-![Game lose (with winning path shown)](./04-loss.png)
+![Game loss (with winning path shown)](./04-loss.png)
 
 
 ## Developer Overview: How It Works
@@ -99,4 +104,4 @@ This game was 99% written by ChatGPT o3-mini.
 
 ---
 
-Enjoy playing **The Hacking Game** and feel free to modify or extend its functionality as needed!
+Enjoy playing **The Matrix Breach** and feel free to modify or extend its functionality as needed!
