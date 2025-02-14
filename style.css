@@ -147,6 +147,31 @@ header h1 {
   }
 }
 
+#infoPanel {
+  margin: 10px auto;
+  padding: 8px;
+  max-width: 500px;
+  background: #222;
+  border: 2px solid #00ffea;
+  border-radius: 5px;
+  box-shadow: 0 0 5px #00ffea;
+  font-size: 1.1rem;
+  color: #e0e0e0;
+  text-align: center;
+  display: none;
+}
+.info-line {
+  margin: 5px 0;
+}
+
+/* Status message colors */
+#messageLine.win {
+  color: #00ffea;
+}
+#messageLine.lose {
+  color: #ff0033;
+}
+
 /* Scoreboard and high score display styling */
 #scoreboard {
   margin-top: 10px;
