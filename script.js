@@ -311,7 +311,18 @@ function generateBoard(requiredScore) {
   for (let r = 0; r < gridHeight; r++) {
     for (let c = 0; c < gridWidth; c++) {
       if (board[r][c] === null) {
-        board[r][c] = randInt(params.minTileValue, params.maxTileValue);
+        if (r === 0) {
+          // First row: roll twice and take the lower number.
+          board[r][c] = Math.min(randInt(params.minTileValue, params.maxTileValue),
+                                 randInt(params.minTileValue, params.maxTileValue));
+        } else if (r === gridHeight - 1) {
+          // Last row: roll twice and take the higher number.
+          board[r][c] = Math.max(randInt(params.minTileValue, params.maxTileValue),
+                                 randInt(params.minTileValue, params.maxTileValue));
+        } else {
+          // All other rows: roll once.
+          board[r][c] = randInt(params.minTileValue, params.maxTileValue);
+        }
       }
     }
   }
