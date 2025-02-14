@@ -116,6 +116,44 @@ function playLoseSound() {
   oscillator.stop(audioCtx.currentTime + 0.5);  // Play for 500 ms
 }
 
+function playWarningSound10() {
+  if (!soundEnabled) return;
+
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+
+  // Use a mid-range frequency for the 10 sec warning.
+  oscillator.frequency.value = 600;
+  oscillator.type = 'square';
+
+  gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+  oscillator.start();
+  // Smooth fade out over 0.2 seconds.
+  gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+  oscillator.stop(audioCtx.currentTime + 0.25);
+}
+
+function playWarningSound5() {
+  if (!soundEnabled) return;
+
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+
+  // Use a higher frequency for the 5 sec warning.
+  oscillator.frequency.value = 750;
+  oscillator.type = 'square';
+
+  gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+  oscillator.start();
+  // Smooth fade out over 0.2 seconds.
+  gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+  oscillator.stop(audioCtx.currentTime + 0.25);
+}
+
 const toggleSoundBtn = document.getElementById('toggleSound');
 
 toggleSoundBtn.addEventListener('click', () => {
@@ -624,19 +662,31 @@ function startTimer() {
   timeLeft = params.roundTime;
   timerEl.textContent = "Time: " + formatTime(timeLeft);
 
-  // Read the CSS custom property from the root element.
+  // Reset warning flags at the start of each round.
+  let warning10Played = false;
+  let warning5Played = false;
+
   const rootStyles = getComputedStyle(document.documentElement);
   const timerDefaultColor = rootStyles.getPropertyValue('--timer-default-color').trim();
-
-  // Set the timer's color to the value from the CSS variable.
   timerEl.style.color = timerDefaultColor;
 
   timerInterval = setInterval(() => {
     timeLeft--;
     timerEl.textContent = "Time: " + formatTime(timeLeft);
-    if (timeLeft <= 10) {
-      timerEl.style.color = "red";  // Hardcoded red for urgency
+
+    if (timeLeft <= 10 && timeLeft > 0) {
+      timerEl.style.color = "red";
     }
+
+    if (timeLeft === 10 && !warning10Played) {
+      playWarningSound10();
+      warning10Played = true;
+    }
+
+    if (timeLeft <= 5 && timeLeft > 0) {
+      playWarningSound5();
+    }
+
     if (timeLeft <= 0) {
       clearInterval(timerInterval);
       endRound(false);
