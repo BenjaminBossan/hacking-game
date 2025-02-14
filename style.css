@@ -59,6 +59,21 @@ header h1 {
   transform: scale(1.05);
 }
 
+#stopBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#showSolutionBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#nextRoundBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 #timer {
   font-family: var(--timer-font), monospace;
   font-size: 2rem;

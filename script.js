@@ -40,7 +40,6 @@ let roundNumber = 1; // Global round counter
 let gameStopped = false;
 let gameOver = false;
 let soundEnabled = true;
-
 // ------------------------------
 // DOM Elements
 // ------------------------------
@@ -51,13 +50,15 @@ const messageEl = document.getElementById('message');
 const scoreBreakdownEl = document.getElementById('scoreBreakdown');
 const totalScoreEl = document.getElementById('totalScore');
 const requiredPointsEl = document.getElementById('requiredPoints');
-const startBtn = document.getElementById('startBtn');
-const restartBtn = document.getElementById('restartBtn');
+const newGameBtn = document.getElementById('newGameBtn');
 const nextRoundBtn = document.getElementById('nextRoundBtn');
 const showSolutionBtn = document.getElementById('showSolutionBtn');
 const helpBtn = document.getElementById('helpBtn');
 const helpModal = document.getElementById('helpModal');
 const closeHelpBtn = document.getElementById('closeHelpBtn');
+stopBtn.disabled = true;
+nextRoundBtn.disabled = true;
+showSolutionBtn.disabled = true;
 
 document.addEventListener('DOMContentLoaded', () => {
   const tileSize = 50; // px
@@ -576,19 +577,20 @@ function endRound(win, msg) {
   document.querySelectorAll('.tile.legal').forEach(el => {
     el.classList.remove('legal');
   });
-  stopBtn.style.display = 'none';
+  stopBtn.disabled = true;
   if (win) {
     totalScore += roundScore;
     messageEl.textContent = msg + " Round Score: " + roundScore + ". Total Score: " + totalScore;
     updateHistory(roundNumber, currentRequiredScore, roundScore, totalScore);
     roundNumber++;
     updateDifficulty(roundNumber);
-    nextRoundBtn.style.display = 'inline-block';
+    nextRoundBtn.disabled = false;
+    showSolutionBtn.disabled = true;
   } else {
     messageEl.textContent = msg + " Round Score: " + roundScore + ". Total Score: " + totalScore + ". Game Over! Please restart.";
     updateHistory(roundNumber, currentRequiredScore, roundScore, totalScore);
-    nextRoundBtn.style.display = 'none';
-    showSolutionBtn.style.display = 'inline-block';
+    nextRoundBtn.disabled = true;
+    showSolutionBtn.disabled = false;
     gameOver = true;
     playLoseSound();
   }
@@ -638,7 +640,7 @@ function revealWinningPath() {
   });
   drawPath(winningPath);
   messageEl.textContent += " (Displayed is one possible solution.)";
-  showSolutionBtn.style.display = 'none';
+  showSolutionBtn.disabled = true;
 }
 
 // ------------------------------
@@ -708,9 +710,9 @@ function startRound() {
   scoreBreakdownEl.textContent = "0 x 0 = 0";
   messageEl.textContent = "";
   gameActive = true;
-  nextRoundBtn.style.display = 'none';
-  showSolutionBtn.style.display = 'none';
-  stopBtn.style.display = 'inline-block';
+  nextRoundBtn.disabled = true;
+  showSolutionBtn.disabled = true;
+  stopBtn.disabled = false;
 
   generateBoard(currentRequiredScore);
   renderBoard();
@@ -756,28 +758,22 @@ function updateHistory(round, minScore, achieved, cumulative) {
 // ------------------------------
 // Button Event Listeners
 // ------------------------------
-startBtn.addEventListener('click', () => {
-  startBtn.style.display = 'none';
-  restartGame();
-});
-
-restartBtn.addEventListener('click', () => {
-  // Only ask for confirmation if the game is active (i.e. not already lost/stopped) and progress exists.
+newGameBtn.addEventListener('click', () => {
+  // If the game is in progress (i.e. progress exists and game is not already over/stopped), ask for confirmation.
   if (!gameStopped && !gameOver && selectedPath.length > 0) {
-    const confirmRestart = confirm("Restarting will lose your current progress. Do you really want to restart?");
+    const confirmRestart = confirm("Starting a new game will lose your current progress. Continue?");
     if (!confirmRestart) {
-      return;  // Cancel restart.
+      return;  // Cancel new game.
     }
   }
   restartGame();
 });
 
 stopBtn.addEventListener('click', () => {
-  // If the game has progress and hasn't been stopped already, ask for confirmation.
   if (selectedPath.length > 0 && !gameStopped) {
-    const confirmStop = confirm("Stopping will lose your current progress. Do you really want to stop?");
+    const confirmStop = confirm("Stopping will lose your current progress. Continue?");
     if (!confirmStop) {
-      return;  // Cancel stop if user chooses so.
+      return;
     }
   }
   gameStopped = true;
@@ -787,9 +783,9 @@ stopBtn.addEventListener('click', () => {
   boardEl.innerHTML = "";
   overlayEl.innerHTML = "";
   // Hide game-related controls.
-  nextRoundBtn.style.display = 'none';
-  showSolutionBtn.style.display = 'none';
-  stopBtn.style.display = 'none';
+  nextRoundBtn.disabled = true;
+  showSolutionBtn.disabled = true;
+  stopBtn.disabled = true;
   messageEl.textContent = "Game stopped. Click 'Start Game' to play again.";
 });
 
