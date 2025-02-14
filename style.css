@@ -40,10 +40,11 @@ header h1 {
 .controls {
   margin: 10px auto;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   gap: 10px;
 }
+
 .controls button {
   background: #222;
   color: #00ffea;
@@ -57,6 +58,13 @@ header h1 {
   background: #00ffea;
   color: #222;
   transform: scale(1.05);
+}
+
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
 }
 
 #stopBtn:disabled {
@@ -74,12 +82,17 @@ header h1 {
   cursor: not-allowed;
 }
 
+#timerRow {
+  width: 100%;
+  text-align: center;
+}
 #timer {
   font-family: var(--timer-font), monospace;
   font-size: 2rem;
   color: var(--timer-default-color);
   text-shadow: 0 0 8px var(--timer-default-color);
   display: inline-block;
+  margin: 0;
 }
 
 /* Game container: only the board, centered */

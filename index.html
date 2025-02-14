@@ -14,13 +14,17 @@
   </header>
 
   <div class="controls">
-    <button id="newGameBtn">New Game</button>
-    <button id="stopBtn"">Stop Game</button>
-    <button id="nextRoundBtn">Next Round</button>
-    <button id="showSolutionBtn">Show Solution</button>
-    <button id="helpBtn">Help</button>
-    <button id="toggleSound" class="active">Sound</button>
-    <div id="timer">Time: 45</div>
+    <div class="button-group">
+      <button id="newGameBtn">New Game</button>
+      <button id="stopBtn">Stop Game</button>
+      <button id="nextRoundBtn" disabled>Next Round</button>
+      <button id="showSolutionBtn" disabled>Show Winning Path</button>
+      <button id="helpBtn">Help</button>
+      <button id="toggleSound" class="active">Sound</button>
+    </div>
+    <div id="timerRow">
+      <div id="timer">Time</div>
+    </div>
   </div>
 
   <!-- Game container: only the board -->
