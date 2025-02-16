@@ -32,7 +32,7 @@ Open the `index.html` file in your browser.
   - Your score is calculated as **sum of selected tile numbers × length of your path**.
   - To win the round, your score must meet or exceed the current required points (shown at the bottom). After a win, the required points increase.
   - If you run out of time, have no legal moves, or the final score is too low, you lose the round.
-  - If you lose, you may click **"Show Winning Path"** to view one possible solution.
+  - If you lose, you may click **"Show Solution"** to view one possible solution.
 
 - **Chase new high scores**
   - After each win, the next breach becomes more difficult.
@@ -86,7 +86,7 @@ This game was 99% written by ChatGPT o3-mini.
 
 4. **Ending a Round:**
    - If the player wins the round (score meets or exceeds the required points), the total score increases and the required points for the next round are incremented by 50.
-   - If the round is lost, the game forces a restart (total score resets) but allows the player to view the winning solution by clicking **"Show Winning Path"**.
+   - If the round is lost, the game forces a restart (total score resets) but allows the player to view the winning solution by clicking **"Show Solution"**.
 
 5. **Visualization:**
    - The path is visualized with both tile highlighting and an SVG overlay. The overlay draws a polyline connecting the centers of the selected tiles (or the winning path), making it easier to trace the route.
