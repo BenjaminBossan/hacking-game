@@ -22,8 +22,11 @@
       <button id="helpBtn">Help</button>
       <button id="toggleSound" class="active">Sound</button>
     </div>
-    <div id="timerRow">
-      <div id="timer">Time</div>
+
+    <div id="topInfoRow">
+      <div id="timer" class="top-info-item">Time: 00:45</div>
+      <div id="topScore" class="top-info-item">Score: 0</div>
+      <div id="topStatus" class="top-info-item">Missing: 100</div>
     </div>
   </div>
 
@@ -35,12 +38,8 @@
     </div>
   </div>
 
-  <!-- Score and high score display -->
-  <div id="infoPanel">
-    <div id="roundInfo" class="info-line"></div>
-    <div id="scoreInfo" class="info-line"></div>
-    <div id="messageLine" class="info-line"></div>
-  </div>
+  <!-- Additional message for more context -->
+  <div id="messageLine" class="info-line"></div>
 
   <!-- Score history is now at the very bottom -->
   <div id="scoreHistory">
@@ -58,6 +57,8 @@
       </tbody>
     </table>
   </div>
+
+  <div id="highScore"></div>
 
   <!-- Help Modal -->
   <div id="helpModal">

@@ -53,9 +53,11 @@ const showSolutionBtn = document.getElementById('showSolutionBtn');
 const helpBtn = document.getElementById('helpBtn');
 const helpModal = document.getElementById('helpModal');
 const closeHelpBtn = document.getElementById('closeHelpBtn');
+const highScoreText = document.getElementById('highScore');
 stopBtn.disabled = true;
 nextRoundBtn.disabled = true;
 showSolutionBtn.disabled = true;
+highScoreText.textContent = `High Score: ${getHighScore()}`;
 
 document.addEventListener('DOMContentLoaded', () => {
   const tileSize = 50; // px
@@ -524,6 +526,12 @@ function getTileEl(row, col) {
   return document.querySelector(`.tile[data-row="${row}"][data-col="${col}"]`);
 }
 
+function updateRoundScore() {
+  const sum = selectedPath.reduce((acc, tile) => acc + tile.value, 0);
+  const length = selectedPath.length;
+  roundScore = sum * length;
+}
+
 function handleTileClick(e) {
   if (!gameActive) return;
   const tileEl = e.currentTarget;
@@ -536,7 +544,8 @@ function handleTileClick(e) {
   playBlip(selectedPath.length);
 
   tileEl.classList.add('selected');
-  updateRoundScoreDisplay();
+  updateRoundScore();
+  updateTopInfo();
   if (row === params.gridHeight - 1) {
     const score = calculateRoundScore();
     if (score >= params.minRoundScore) {
@@ -556,32 +565,20 @@ function calculateRoundScore() {
   return sum * selectedPath.length;
 }
 
-function updateInfoPanel() {
-  const infoPanel = document.getElementById('infoPanel');
-  // If there's no score info yet, hide the panel.
-  if (roundScore === 0 && totalScore === 0) {
-    infoPanel.style.display = 'none';
-    return;
-  }
+function updateTopInfo() {
+  const timerEl = document.getElementById('timer');
+  const topScoreEl = document.getElementById('topScore');
+  const topStatusEl = document.getElementById('topStatus');
 
-  infoPanel.style.display = 'block';
+  timerEl.textContent = "Time: " + formatTime(timeLeft);
+  topScoreEl.textContent = `Score: ${roundScore}`;
 
-  // Calculate missing points to win this round.
   let pointsMissing = currentRequiredScore - roundScore;
-  if (pointsMissing < 0) pointsMissing = 0;
-  const roundText = `Round Score: ${roundScore} ${pointsMissing > 0 ? `| ${pointsMissing} pts missing` : "| Breached!"}`;
-  document.getElementById('roundInfo').textContent = roundText;
-
-  const highScore = getHighScore();
-  const scoreText = `Total Score: ${totalScore} | High Score: ${highScore}`;
-  document.getElementById('scoreInfo').textContent = scoreText;
-}
-
-function updateRoundScoreDisplay() {
-  const sum = selectedPath.reduce((acc, tile) => acc + tile.value, 0);
-  const length = selectedPath.length;
-  roundScore = sum * length;
-  updateInfoPanel();
+  if (pointsMissing <= 0) {
+    topStatusEl.textContent = "Breached!";
+  } else {
+    topStatusEl.textContent = `Missing: ${pointsMissing}`;
+  }
 }
 
 // A function to retrieve the high score from localStorage, defaulting to 0 if not set.
@@ -593,6 +590,7 @@ function updateHighScore() {
   const currentHigh = getHighScore();
   if (totalScore > currentHigh) {
     localStorage.setItem('highScore', totalScore);
+    highScoreText.textContent = `High Score: ${totalScore}`;
   }
 }
 
@@ -648,7 +646,7 @@ function endRound(win) {
     playLoseSound();
   }
   updateHighScore();
-  updateInfoPanel();
+  updateTopInfo();
 }
 
 function formatTime(seconds) {
@@ -772,10 +770,7 @@ function startRound() {
   roundScore = 0;
 
   // Clear the info panel and hide it initially.
-  document.getElementById('roundInfo').textContent = "";
-  document.getElementById('scoreInfo').textContent = "";
   document.getElementById('messageLine') && (document.getElementById('messageLine').textContent = "");
-  document.getElementById('infoPanel').style.display = 'none';
 
   gameActive = true;
   nextRoundBtn.disabled = true;
@@ -788,6 +783,7 @@ function startRound() {
     tileEl.addEventListener('click', handleTileClick);
   });
   highlightLegalMoves();
+  updateTopInfo();
   startTimer();
 }
 
@@ -802,6 +798,8 @@ function restartGame() {
   // Reset game flags.
   gameStopped = false;
   gameOver = false;
+  highScore = getHighScore();
+  highScoreText.textContent = `High Score: ${highScore}`;
   resetDifficulty();
   startRound();
 }
@@ -826,7 +824,7 @@ function updateHistory(round, minScore, achieved, cumulative) {
 // ------------------------------
 newGameBtn.addEventListener('click', () => {
   // If the game is in progress (i.e. progress exists and game is not already over/stopped), ask for confirmation.
-  if (!gameStopped && !gameOver && selectedPath.length > 0) {
+  if (!gameStopped && !gameOver && selectedPath.length > 0 || (roundNumber > 1)) {
     const confirmRestart = confirm("You will lose your current progress. Continue?");
     if (!confirmRestart) {
       return;  // Cancel new game.
@@ -836,7 +834,7 @@ newGameBtn.addEventListener('click', () => {
 });
 
 stopBtn.addEventListener('click', () => {
-  if (selectedPath.length > 0 && !gameStopped) {
+  if (!gameStopped && !gameOver && selectedPath.length > 0 || (roundNumber > 1)) {
     const confirmStop = confirm("You will lose your current progress. Continue?");
     if (!confirmStop) {
       return;

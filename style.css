@@ -82,13 +82,26 @@ header h1 {
   cursor: not-allowed;
 }
 
-#timerRow {
-  width: 100%;
-  text-align: center;
+#topInfoRow {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 10px;
 }
+
+.top-info-item {
+  width: 225px;
+  text-align: center;
+  font-family: var(--timer-font), monospace;
+  font-size: 1.5rem;
+  color: var(--timer-default-color);
+  display: inline-block;
+  margin: 0;
+}
+
 #timer {
   font-family: var(--timer-font), monospace;
-  font-size: 2rem;
+  font-size: 1.5rem;
   color: var(--timer-default-color);
   text-shadow: 0 0 8px var(--timer-default-color);
   display: inline-block;
@@ -177,11 +190,6 @@ header h1 {
   margin-top: 10px;
   font-size: 1.1rem;
 }
-#highScoreDisplay {
-  margin-top: 10px;
-  font-size: 1.1rem;
-  color: #00ffea;
-}
 #message {
   margin-top: 10px;
   font-size: 1.2rem;
@@ -213,6 +221,11 @@ header h1 {
 #historyTable tr.fail {
   background-color: #131313;
   color: #fff;
+}
+
+#highScore {
+  color: #FFFF44;
+  font-size: 1rem;
 }
 
 /* Board Tiles */
