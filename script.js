@@ -6,7 +6,7 @@ const initialGridWidth = 7;
 const initialGridHeight = 7;
 const initialRoundTime = 45; // seconds per round
 const initialMinRoundScore = 100;
-const maxMinRoundScore = 2000;  // score req is increased each round but capped at this value
+const maxMinRoundScore = 1337;  // score req is increased each round but capped at this value
 const initialRequiredPointsIncrement = 100;
 
 const params = {
@@ -598,12 +598,12 @@ function updateDifficulty(roundNumber) {
   // increase minRoundScore but not above maxMinRoundScore
   params.minRoundScore = Math.min(params.minRoundScore + params.requiredPointsIncrement, maxMinRoundScore);
 
-  const num = 5;
+  const num = 4;
   if (roundNumber === num + 1) {
     params.roundTime += 5;
   } else if (roundNumber === 2 * num + 1) {
     params.roundTime += 5;
-    params.gridWidth += 1;
+    params.gridHeight += 1;
   } else if (roundNumber === 3 * num + 1) {
     params.roundTime += 5;
   } else if (roundNumber === 4 * num + 1) {
