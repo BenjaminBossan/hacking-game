@@ -37,7 +37,6 @@ let roundScore = 0;
 let currentRequiredScore = params.minRoundScore;
 let gameActive = false;  // round is in progress
 let roundNumber = 1; // Global round counter
-let gameStopped = false;
 let gameOver = false;
 let soundEnabled = true;
 // ------------------------------
@@ -796,7 +795,6 @@ function restartGame() {
   // Clear the history table.
   document.querySelector('#historyTable tbody').innerHTML = "";
   // Reset game flags.
-  gameStopped = false;
   gameOver = false;
   highScore = getHighScore();
   highScoreText.textContent = `High Score: ${highScore}`;
@@ -824,7 +822,7 @@ function updateHistory(round, minScore, achieved, cumulative) {
 // ------------------------------
 newGameBtn.addEventListener('click', () => {
   // If the game is in progress (i.e. progress exists and game is not already over/stopped), ask for confirmation.
-  if (!gameStopped && !gameOver && selectedPath.length > 0 || (roundNumber > 1)) {
+  if ((gameActive || !gameOver) && ((selectedPath.length > 0) || (roundNumber > 1))) {
     const confirmRestart = confirm("You will lose your current progress. Continue?");
     if (!confirmRestart) {
       return;  // Cancel new game.
@@ -834,13 +832,12 @@ newGameBtn.addEventListener('click', () => {
 });
 
 stopBtn.addEventListener('click', () => {
-  if (!gameStopped && !gameOver && selectedPath.length > 0 || (roundNumber > 1)) {
+  if ((gameActive || !gameOver) && ((selectedPath.length > 0) || (roundNumber > 1))) {
     const confirmStop = confirm("You will lose your current progress. Continue?");
     if (!confirmStop) {
       return;
     }
   }
-  gameStopped = true;
   clearInterval(timerInterval);
   gameActive = false;
   // Clear the board and overlay.
