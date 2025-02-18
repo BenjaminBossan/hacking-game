@@ -17,10 +17,10 @@ const params = {
   roundTime: initialRoundTime,
   minRoundScore: initialMinRoundScore,
   requiredPointsIncrement: initialRequiredPointsIncrement,
-  minPathLength: 6,
-  maxPathLength: 12,
-  maxSequenceAttempts: 1000,
-  maxPathAttempts: 1000
+  minPathLength: 5,
+  maxPathLength: 23,
+  maxSequenceAttempts: 10000,
+  maxPathAttempts: 10000
 };
 
 // ------------------------------
@@ -188,12 +188,11 @@ function generateWinningSequence(requiredScore) {
   const { minTileValue, maxTileValue, maxSequenceAttempts, minPathLength, maxPathLength } = params;
   const mu = (minTileValue + maxTileValue) / 2;  // approximate average tile value
   // Compute the desired sequence length based on R ≈ mu * L^2, i.e. L ≈ sqrt(R / mu)
-  let desiredLength = Math.ceil(Math.sqrt(requiredScore / mu));
+  let desiredLength = Math.ceil(1.2 * Math.sqrt(requiredScore / mu));
   // Define a range around the desired length.
-  // const minLen = Math.max(minPathLength, desiredLength - 2);
-  // const maxLen = Math.min(maxPathLength, desiredLength + 2);
-  const minLen = Math.max(minPathLength, desiredLength - 1);
-  const maxLen = Math.min(maxPathLength, desiredLength + 1);
+  const minLenTmp = Math.max(minPathLength, desiredLength - 2);
+  const maxLen = Math.min(maxPathLength, desiredLength + 2);
+  const minLen = Math.min(minLenTmp, maxLen - 1);
 
   let attempts = 0;
   while (attempts < maxSequenceAttempts) {
@@ -211,6 +210,7 @@ function generateWinningSequence(requiredScore) {
     }
     attempts++;
   }
+  console.log("Failed to generate a winning sequence after many attempts.");
   return null; // Failed after many attempts.
 }
 
@@ -220,20 +220,18 @@ function generateWinningSequence(requiredScore) {
 
 // Lay out the winning sequence on the grid with the following rules:
 //   - The first tile must be in the top row.
-//   - The last tile must be in the bottom row.
+//   - The last tile must be in the bottom row. Tiles before the last tile cannot be in the bottom row.
 //   - Moves alternate: once the first move's type is chosen (either horizontal or vertical),
 //     subsequent moves alternate.
-// For horizontal moves: the row remains the same, and the column must change.
-// For vertical moves: the column remains the same, and the row must increase (at least by 1).
+//   - The same tile cannot be visited twice.
 function generateWinningPathLayout(n) {
   const gridHeight = params.gridHeight;
   const gridWidth = params.gridWidth;
-  let bestPath = null;
 
-  // Generate an alternating pattern
+  // Generate an alternating pattern: length n-1.
   function getPattern() {
     const pattern = [];
-    const m = n - 1; // total number of moves needed
+    const m = n - 1;
     // If m is even, start with horizontal; if odd, start with vertical.
     const firstMove = (m % 2 === 0) ? 'horizontal' : 'vertical';
     pattern.push(firstMove);
@@ -243,72 +241,55 @@ function generateWinningPathLayout(n) {
     return pattern;
   }
 
-  // Backtracking function.
-  // index: current move index (0-indexed; first tile is already in path)
-  // curr: current position {row, col}
-  // pattern: array of move types of length (n-1)
-  // path: array of positions so far
-  function backtrack(index, curr, pattern, path) {
-    // If we are at the bottom row before finishing the path, this branch is invalid.
-    if (curr.row === gridHeight - 1 && index < n - 1) {
-      return false;
-    }
-    // Base case: we have generated n moves.
-    if (index === n - 1) {
-      if (curr.row === gridHeight - 1) {
-        bestPath = JSON.parse(JSON.stringify(path));
-        return true;
-      }
-      return false;
-    }
-
-    const moveType = pattern[index];
-    let candidates = [];
-    if (moveType === 'horizontal') {
-      // Horizontal moves: same row, any different column.
-      for (let col = 0; col < gridWidth; col++) {
-        if (col !== curr.col) {
-          candidates.push({ row: curr.row, col });
-        }
-      }
-    } else { // vertical move (allow upward or downward)
-      // For vertical moves, try all rows (except the current one).
-      for (let row = 0; row < gridHeight; row++) {
-        if (row === curr.row) continue;
-        // Compute how many vertical moves remain after this move.
-        const remainingVertical = pattern.slice(index + 1).filter(m => m === 'vertical').length;
-        // Feasibility check:
-        // In the best-case scenario, assume that from the candidate we can move downward by one per vertical move.
-        // Then candidate.row + remainingVertical must be at least gridHeight - 1.
-        if (row + remainingVertical < gridHeight - 1) continue;
-        candidates.push({ row, col: curr.col });
-      }
-    }
-    // Remove any candidate that is already in the path (to avoid cycles).
-    candidates = candidates.filter(candidate =>
-      !path.some(p => p.row === candidate.row && p.col === candidate.col)
-    );
-    // Randomize candidate order.
-    candidates.sort(() => Math.random() - 0.5);
-    for (let candidate of candidates) {
-      path.push(candidate);
-      if (backtrack(index + 1, candidate, pattern, path)) {
-        return true;
-      }
-      path.pop();
-    }
-    return false;
-  }
-
-  // Try up to maxPathAttempts times to generate a valid path.
   for (let attempt = 0; attempt < params.maxPathAttempts; attempt++) {
     const pattern = getPattern();
     const startCol = randInt(0, gridWidth - 1);
-    const path = [{ row: 0, col: startCol }];
-    if (backtrack(0, { row: 0, col: startCol }, pattern, path)) {
-      return bestPath;
+    let path = [{ row: 0, col: startCol }];
+    let valid = true;
+
+    // For each move in the pattern, generate the next tile.
+    // i indexes the current move in the pattern.
+    for (let i = 0; i < pattern.length; i++) {
+      const current = path[path.length - 1];
+      if (pattern[i] === 'horizontal') {
+        // Allowed: same row, any column except current.col.
+        let allowedCols = [];
+        for (let col = 0; col < gridWidth; col++) {
+          if (col !== current.col && !path.some(t => t.row === current.row && t.col === col)) {
+            allowedCols.push(col);
+          }
+        }
+        if (allowedCols.length === 0) {
+          valid = false;
+          break;
+        }
+        const nextCol = allowedCols[randInt(0, allowedCols.length - 1)];
+        // For horizontal moves, the row remains the same.
+        path.push({ row: current.row, col: nextCol });
+      } else { // vertical move (allowed upward or downward)
+        let allowedRows = [];
+        for (let row = 0; row < gridHeight; row++) {
+          if (row === current.row) continue;
+          // Disallow bottom row if this is not the final move.
+          if (i < pattern.length - 1 && row === gridHeight - 1) continue;
+          if (!path.some(t => t.row === row && t.col === current.col)) {
+            allowedRows.push(row);
+          }
+        }
+        if (allowedRows.length === 0) {
+          valid = false;
+          break;
+        }
+        const nextRow = allowedRows[randInt(0, allowedRows.length - 1)];
+        path.push({ row: nextRow, col: current.col });
+      }
+    }
+    // Final check: Only accept the path if the last tile is in the bottom row.
+    if (valid && path[path.length - 1].row === gridHeight - 1) {
+      return path;
     }
   }
+  console.log("Failed to generate a winning path after many attempts.");
   return null;
 }
 
@@ -324,7 +305,7 @@ function generateBoard(requiredScore) {
 
   const seqResult = generateWinningSequence(requiredScore);
   if (!seqResult) {
-    alert("Unable to generate a winning sequence. Please try again later.");
+    alert("An error occurred while generating the board. Please try again later.");
     gameActive = false;
     return;
   }
@@ -333,7 +314,7 @@ function generateBoard(requiredScore) {
 
   const pathLayout = generateWinningPathLayout(seqLength);
   if (!pathLayout) {
-    alert("Unable to generate a winning path layout. Please try again later.");
+    alert("An error occurred while generating the board. Please try again later.");
     gameActive = false;
     return;
   }
