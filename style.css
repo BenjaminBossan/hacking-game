@@ -379,3 +379,264 @@ header h1 {
     max-width: 90%;
   }
 }
+
+/*******************************/
+/* Glitch Effect for Game Over */
+/*******************************/
+
+@keyframes glitch-anim-1 {
+  0%, 100% {clip-path: inset(0 0 98% 0); }
+  20% {clip-path: inset(33% 0 66% 0); }
+  40% {clip-path: inset(66% 0 33% 0); }
+  60% {clip-path: inset(33% 0 66% 0); }
+  80% {clip-path: inset(10% 0 90% 0); }
+}
+
+@keyframes glitch-anim-2 {
+  0%, 100% {
+    clip-path: inset(0 98% 0 0);
+  }
+  25% {
+    clip-path: inset(0 33% 0 66%);
+  }
+  50% {
+    clip-path: inset(0 66% 0 33%);
+  }
+  75% {
+    clip-path: inset(0 33% 0 66%);
+  }
+}
+
+@keyframes noise-anim {
+  0% { background-position: 0% 0%; }
+  10% { background-position: -5% -10%; }
+  20% { background-position: -15% 5%; }
+  30% { background-position: 7% -25%; }
+  40% { background-position: 20% 25%; }
+  50% { background-position: -25% 10%; }
+  60% { background-position: 15% 5%; }
+  70% { background-position: 0% 15%; }
+  80% { background-position: 25% 35%; }
+  90% { background-position: -10% 10%; }
+  100% { background-position: 0% 0%; }
+}
+
+@keyframes glitch-skew {
+  0%, 100% { transform: skew(0deg); }
+  25% { transform: skew(2deg); }
+  50% { transform: skew(-1deg); }
+  75% { transform: skew(3deg); }
+}
+
+@keyframes scan-line {
+  0% { top: -100%; }
+  100% { top: 100%; }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  33% { opacity: 0.8; }
+  66% { opacity: 0.4; }
+  77% { opacity: 0.6; }
+  88% { opacity: 0.2; }
+}
+
+@keyframes pixel-shift {
+  0%, 100% { transform: translate(0); }
+  10% { transform: translate(2px, 0); }
+  20% { transform: translate(0, -3px); }
+  30% { transform: translate(-2px, 2px); }
+  40% { transform: translate(1px, 1px); }
+  50% { transform: translate(-3px, -1px); }
+  60% { transform: translate(0, 3px); }
+  70% { transform: translate(3px, -2px); }
+  80% { transform: translate(-1px, -2px); }
+  90% { transform: translate(1px, 3px); }
+}
+
+/* Game container glitch effect */
+.game-glitch {
+  position: relative;
+  overflow: hidden;
+  animation: flicker 0.3s infinite steps(1);
+}
+
+/* Base noise pattern */
+.game-glitch::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: 50px 50px;
+  opacity: 0.15;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 2;
+  animation: noise-anim 0.2s steps(8) infinite;
+}
+
+/* Shifting overlay */
+.game-glitch::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(32, 128, 255, 0.2) 2%,
+    rgba(32, 128, 255, 0.1) 3%,
+    rgba(32, 128, 255, 0.1) 3%,
+    transparent 3.5%,
+    transparent 9%,
+    rgba(32, 128, 255, 0.2) 9.5%,
+    rgba(32, 128, 255, 0.1) 10%,
+    transparent 10.5%,
+    transparent 20%,
+    rgba(32, 128, 255, 0.2) 20.5%,
+    rgba(32, 128, 255, 0.1) 21%,
+    transparent 21.5%,
+    transparent 30%,
+    rgba(32, 128, 255, 0.2) 30.5%,
+    rgba(32, 128, 255, 0.1) 31%,
+    transparent 31.5%,
+    transparent 65%,
+    rgba(32, 128, 255, 0.2) 65.5%,
+    rgba(32, 128, 255, 0.1) 66%,
+    transparent 66.5%,
+    transparent 80%,
+    rgba(32, 128, 255, 0.2) 80.5%,
+    rgba(32, 128, 255, 0.1) 81%,
+    transparent 81.5%,
+    transparent 99%,
+    rgba(32, 128, 255, 0.2) 99.5%,
+    rgba(32, 128, 255, 0.1) 100%
+  );
+  z-index: 3;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* Moving scan line */
+.game-glitch .scan-line {
+  position: absolute;
+  width: 100%;
+  height: 5px;
+  background: rgba(0, 255, 255, 0.1);
+  z-index: 4;
+  animation: scan-line 4s linear infinite;
+  pointer-events: none;
+}
+
+/* Pixel block errors */
+.pixel-error {
+  position: absolute;
+  background: rgba(0, 255, 234, 0.3);
+  z-index: 3;
+  animation: pixel-shift 0.4s steps(2) infinite;
+  pointer-events: none;
+}
+
+/* Color artifacts */
+.glitch-artifact {
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s;
+  mix-blend-mode: screen;
+}
+
+/* Red channel glitch */
+.glitch-artifact.red {
+  background: rgba(255, 0, 76, 0.4);
+  animation: pixel-shift 0.3s steps(2) infinite;
+}
+
+/* Green channel glitch */
+.glitch-artifact.green {
+  background: rgba(0, 255, 76, 0.4);
+  animation: pixel-shift 0.33s steps(2) infinite;
+}
+
+/* Blue channel glitch */
+.glitch-artifact.blue {
+  background: rgba(76, 0, 255, 0.4);
+  animation: pixel-shift 0.36s steps(2) infinite;
+}
+
+.game-glitch .glitch-artifact {
+  opacity: 1;
+}
+
+/* Individual tile glitch effect */
+.tile.glitch {
+  position: relative;
+  overflow: hidden;
+  animation: glitch-skew 0.3s infinite alternate-reverse;
+}
+
+/* Offset text shadows for tiles */
+.tile.glitch::before,
+.tile.glitch::after {
+  content: attr(data-number);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  line-height: 50px;
+  background: inherit;
+}
+
+.tile.glitch::before {
+  color: #ff009c;
+  left: 2px;
+  text-shadow: -1px 0 #00ffea;
+  clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+  animation: glitch-text 0.4s infinite alternate-reverse;
+  z-index: 1;
+}
+
+.tile.glitch::after {
+  color: #00ffea;
+  left: -2px;
+  text-shadow: 1px 0 #ff009c;
+  clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+  animation: glitch-text 0.4s infinite alternate-reverse;
+  animation-delay: 0.15s;
+  z-index: 1;
+}
+
+/* More extreme text distortion */
+@keyframes glitch-text {
+  0% {transform: translate(0); }
+  10% {transform: translate(-2px, 2px); }
+  20% {transform: translate(-4px, -2px); }
+  30% {transform: translate(2px, 4px); }
+  40% {transform: translate(3px, -3px); }
+  50% {transform: translate(-3px, 1px); }
+  60% {transform: translate(0, 3px); }
+  70% {transform: translate(3px, -2px); }
+  80% {transform: translate(-1px, -2px); }
+  90% {transform: translate(1px, 3px); }
+  100% {transform: translate(0); }
+}
+
+/* Occasional flicker effect */
+.flicker {
+  animation: flicker 0.5s step-end infinite alternate;
+}
+
+/* Bad reception static overlay */
+.static-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}

@@ -599,6 +599,36 @@ function resetDifficulty() {
   params.gridHeight = initialGridHeight;
 }
 
+function addGlitchEffect() {
+  document.querySelector('#boardContainer').classList.add('game-glitch');
+
+  // Apply glitch effect to all tiles
+  const tiles = document.querySelectorAll('.tile');
+  tiles.forEach(tile => {
+    // Store the number in the data-number attribute
+    tile.setAttribute('data-number', tile.textContent);
+    tile.classList.add('glitch');
+  });
+
+  setTimeout(() => {
+    document.querySelector('#boardContainer').classList.remove('game-glitch');
+    tiles.forEach(tile => {
+      tile.classList.remove('glitch');
+    });
+  }, 1500);
+}
+
+function removeGlitchEffect() {
+  // Remove glitch effect from the game container
+  document.querySelector('#boardContainer').classList.remove('glitch-active');
+  // Remove glitch effect from all tiles
+  const tiles = document.querySelectorAll('.tile');
+  tiles.forEach(tile => {
+    tile.classList.remove('glitch');
+  });
+}
+
+
 function endRound(win) {
   gameActive = false;
   clearInterval(timerInterval);
@@ -623,6 +653,7 @@ function endRound(win) {
     nextRoundBtn.disabled = true;
     showSolutionBtn.disabled = false;
     gameOver = true;
+    addGlitchEffect();
     playLoseSound();
   }
   updateHighScore();
@@ -775,6 +806,7 @@ function restartGame() {
   roundNumber = 1;
   // Clear the history table.
   document.querySelector('#historyTable tbody').innerHTML = "";
+  removeGlitchEffect();
   // Reset game flags.
   gameOver = false;
   highScore = getHighScore();
