@@ -615,7 +615,7 @@ function addGlitchEffect() {
     tiles.forEach(tile => {
       tile.classList.remove('glitch');
     });
-  }, 1500);
+  }, 1200);  // duration of the glitch effect in ms
 }
 
 function removeGlitchEffect() {
