@@ -775,7 +775,7 @@ boardEl.addEventListener('mouseout', (e) => {
 // ------------------------------
 // Game Initialization and Reset
 // ------------------------------
-function startRound() {
+async function startRound() {
   currentRequiredScore = params.minRoundScore;
   selectedPath = [];
   roundScore = 0;
@@ -793,6 +793,7 @@ function startRound() {
   document.querySelectorAll('.tile').forEach(tileEl => {
     tileEl.addEventListener('click', handleTileClick);
   });
+  await revealTiles(document.getElementById('board'), 15);
   highlightLegalMoves();
   updateTopInfo();
   startTimer();
@@ -813,6 +814,39 @@ function restartGame() {
   highScoreText.textContent = `High Score: ${highScore}`;
   resetDifficulty();
   startRound();
+}
+
+function revealTiles(board, delay = 20) {
+  const tiles = board.querySelectorAll('.tile');
+  const totalTiles = tiles.length;
+
+  // First, hide all tiles
+  tiles.forEach(tile => {
+    tile.style.transform = 'rotateY(90deg)';
+    tile.style.opacity = '0';
+  });
+
+  // Then reveal them one by one with a staggered delay
+  tiles.forEach((tile, index) => {
+    setTimeout(() => {
+      // Add transition properties
+      tile.style.transition = 'transform 0.1s ease, opacity 0.1s ease';
+      tile.style.transform = 'rotateY(0deg)';
+      tile.style.opacity = '1';
+
+      // Optional: Remove the transition after animation completes
+      setTimeout(() => {
+        tile.style.transition = '';
+      }, 300);
+    }, index * delay); // Staggered delay based on tile index
+  });
+
+  // Return a promise that resolves when all tiles are revealed
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve();
+    }, totalTiles * delay + 300); // Total animation time
+  });
 }
 
 // ---------------

@@ -258,6 +258,25 @@ header h1 {
   color: #222 !important;
   box-shadow: 0 0 10px #8989dd !important;
 }
+/* Add these styles to your existing .tile class in style.css */
+.tile {
+  /* Keep your existing tile styles and add: */
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Optional: Add a slight wobble effect when tiles are revealed */
+@keyframes tileRevealWobble {
+  0% { transform: rotateY(90deg); }
+  70% { transform: rotateY(-5deg); }
+  100% { transform: rotateY(0deg); }
+}
+
+/* Optional: Enhanced version if you want a more dramatic effect */
+.tile.revealing {
+  animation: tileRevealWobble 0.4s ease forwards;
+}
 
 /* Style for the sound toggle button */
 #toggleSound {
