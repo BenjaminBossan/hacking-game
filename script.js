@@ -1,12 +1,9 @@
-// ------------------------------
-// Parameter Object & Constants
-// ------------------------------
-
+// Parameters & Constants
 const initialGridWidth = 7;
 const initialGridHeight = 7;
-const initialRoundTime = 45; // seconds per round
+const initialRoundTime = 45; // seconds
 const initialMinRoundScore = 100;
-const maxMinRoundScore = 1337;  // score req is increased each round but capped at this value
+const maxMinRoundScore = 1337;
 const initialRequiredPointsIncrement = 100;
 
 const params = {
@@ -23,25 +20,23 @@ const params = {
   maxPathAttempts: 10000
 };
 
-// ------------------------------
-// Global Game Variables
-// ------------------------------
-let board = []; // 2D array of tile values
-let winningPath = []; // Array of objects: {row, col, value}
-let winningSequence = []; // The pre-generated sequence of numbers (non-decreasing)
-let selectedPath = []; // Array of objects: {row, col, value}
-let timerInterval = null;
-let timeLeft = params.roundTime;
-let totalScore = 0;
-let roundScore = 0;
-let currentRequiredScore = params.minRoundScore;
-let gameActive = false;  // round is in progress
-let roundNumber = 1; // Global round counter
-let gameOver = false;
-let soundEnabled = true;
-// ------------------------------
+// Game State
+const state = {
+  board: [],
+  winningPath: [],
+  winningSequence: [],
+  selectedPath: [],
+  timerInterval: null,
+  timeLeft: params.roundTime,
+  totalScore: 0,
+  roundScore: 0,
+  currentRequiredScore: params.minRoundScore,
+  gameActive: false,
+  roundNumber: 1,
+  gameOver: false
+};
+
 // DOM Elements
-// ------------------------------
 const boardEl = document.getElementById('board');
 const overlayEl = document.getElementById('overlay');
 const timerEl = document.getElementById('timer');
@@ -53,315 +48,178 @@ const helpBtn = document.getElementById('helpBtn');
 const helpModal = document.getElementById('helpModal');
 const closeHelpBtn = document.getElementById('closeHelpBtn');
 const highScoreText = document.getElementById('highScore');
+const stopBtn = document.getElementById('stopBtn');
+
 stopBtn.disabled = true;
 nextRoundBtn.disabled = true;
 showSolutionBtn.disabled = true;
 highScoreText.textContent = `High Score: ${getHighScore()}`;
 
 document.addEventListener('DOMContentLoaded', () => {
-  const tileSize = 50; // px
-  const gap = 2;       // px
+  const tileSize = 50, gap = 2;
   const containerWidth = (tileSize * params.gridWidth) + (gap * (params.gridWidth - 1));
-  document.getElementById('boardContainer').style.width = containerWidth + 'px';
+  document.getElementById('boardContainer').style.width = `${containerWidth}px`;
 });
 
-// ------------------------------
 // Audio Setup
-// ------------------------------
-
-// Create one global AudioContext.
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function playBlip(pathLength) {
   if (!soundEnabled) return;
-
   const oscillator = audioCtx.createOscillator();
   const gainNode = audioCtx.createGain();
-
   oscillator.connect(gainNode);
   gainNode.connect(audioCtx.destination);
-
-  // Base frequency of 400 Hz, increase 50 Hz per tile (adjust as desired)
   oscillator.frequency.value = 400 + (pathLength * 15);
   oscillator.type = 'sine';
-
-  // Set the initial volume.
-  const initialGain = 0.2;
-  gainNode.gain.setValueAtTime(initialGain, audioCtx.currentTime);
-
+  gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
   oscillator.start();
-
-  // Schedule a smooth fade-out
-  // Note: Exponential ramp requires a nonzero target value.
   gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
-
-  // Stop the oscillator slightly after the ramp completes.
   oscillator.stop(audioCtx.currentTime + 0.20);
 }
 
-// Play a "lose" sound when the player loses.
 function playLoseSound() {
   if (!soundEnabled) return;
-
   const oscillator = audioCtx.createOscillator();
   const gainNode = audioCtx.createGain();
-
   oscillator.connect(gainNode);
   gainNode.connect(audioCtx.destination);
-
-  oscillator.frequency.value = 50;  // Lower tone for loss
+  oscillator.frequency.value = 50;
   oscillator.type = 'sawtooth';
   gainNode.gain.value = 0.05;
-
   oscillator.start();
-  oscillator.stop(audioCtx.currentTime + 0.5);  // Play for 500 ms
+  oscillator.stop(audioCtx.currentTime + 0.5);
 }
 
-function playWarningSound10() {
+// Combined warning sound function (different frequencies)
+function playWarningSound(frequency) {
   if (!soundEnabled) return;
-
   const oscillator = audioCtx.createOscillator();
   const gainNode = audioCtx.createGain();
   oscillator.connect(gainNode);
   gainNode.connect(audioCtx.destination);
-
-  // Use a mid-range frequency for the 10 sec warning.
-  oscillator.frequency.value = 600;
+  oscillator.frequency.value = frequency;
   oscillator.type = 'square';
-
   gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
   oscillator.start();
-  // Smooth fade out over 0.2 seconds.
-  gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
-  oscillator.stop(audioCtx.currentTime + 0.25);
-}
-
-function playWarningSound5() {
-  if (!soundEnabled) return;
-
-  const oscillator = audioCtx.createOscillator();
-  const gainNode = audioCtx.createGain();
-  oscillator.connect(gainNode);
-  gainNode.connect(audioCtx.destination);
-
-  // Use a higher frequency for the 5 sec warning.
-  oscillator.frequency.value = 750;
-  oscillator.type = 'square';
-
-  gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
-  oscillator.start();
-  // Smooth fade out over 0.2 seconds.
   gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
   oscillator.stop(audioCtx.currentTime + 0.25);
 }
 
 const toggleSoundBtn = document.getElementById('toggleSound');
-
+let soundEnabled = true;
 toggleSoundBtn.addEventListener('click', () => {
   soundEnabled = !soundEnabled;
-  if (soundEnabled) {
-    toggleSoundBtn.classList.add('active');
-  } else {
-    toggleSoundBtn.classList.remove('active');
-  }
+  toggleSoundBtn.classList.toggle('active', soundEnabled);
 });
 
-// ------------------------------
 // Utility Functions
-// ------------------------------
-function randInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const deepCopy = (arr) => JSON.parse(JSON.stringify(arr));
 
-// Returns a deep copy of an array of objects
-function deepCopy(arr) {
-  return JSON.parse(JSON.stringify(arr));
-}
-
-// ------------------------------
 // Winning Sequence Generation
-// ------------------------------
-
-// Generate a non-decreasing sequence of numbers uniformly.
-// We require that (length * sum) >= minRoundScore.
 function generateWinningSequence(requiredScore) {
   const { minTileValue, maxTileValue, maxSequenceAttempts, minPathLength, maxPathLength } = params;
-  const mu = (minTileValue + maxTileValue) / 2;  // approximate average tile value
-  // Compute the desired sequence length based on R ≈ mu * L^2, i.e. L ≈ sqrt(R / mu)
+  const mu = (minTileValue + maxTileValue) / 2;
   let desiredLength = Math.ceil(1.2 * Math.sqrt(requiredScore / mu));
-  // Define a range around the desired length.
-  const minLenTmp = Math.max(minPathLength, desiredLength - 2);
+  const minLen = Math.min(Math.max(minPathLength, desiredLength - 2), desiredLength + 2 - 1);
   const maxLen = Math.min(maxPathLength, desiredLength + 2);
-  const minLen = Math.min(minLenTmp, maxLen - 1);
-
   let attempts = 0;
-  while (attempts < maxSequenceAttempts) {
+  while (attempts < params.maxSequenceAttempts) {
     const length = randInt(minLen, maxLen);
-    let seq = [];
-    for (let i = 0; i < length; i++) {
-      seq.push(randInt(minTileValue, maxTileValue));
-    }
-    // Sort to enforce non-decreasing order.
-    seq.sort((a, b) => a - b);
+    const seq = Array.from({ length }, () => randInt(minTileValue, maxTileValue)).sort((a, b) => a - b);
     const sum = seq.reduce((a, b) => a + b, 0);
-    const score = sum * length;
-    if (score >= requiredScore) {
-      return { seq, length };
-    }
+    if (sum * length >= requiredScore) return { seq, length };
     attempts++;
   }
-  console.log("Failed to generate a winning sequence after many attempts.");
-  return null; // Failed after many attempts.
+  console.log("Failed to generate a winning sequence.");
+  return null;
 }
 
-// ------------------------------
 // Winning Path Layout Generation
-// ------------------------------
-
-// Lay out the winning sequence on the grid with the following rules:
-//   - The first tile must be in the top row.
-//   - The last tile must be in the bottom row. Tiles before the last tile cannot be in the bottom row.
-//   - Moves alternate: once the first move's type is chosen (either horizontal or vertical),
-//     subsequent moves alternate.
-//   - The same tile cannot be visited twice.
 function generateWinningPathLayout(n) {
-  const gridHeight = params.gridHeight;
-  const gridWidth = params.gridWidth;
-
-  // Generate an alternating pattern: length n-1.
-  function getPattern() {
+  const { gridHeight, gridWidth } = params;
+  const getPattern = () => {
     const pattern = [];
-    const m = n - 1;
-    // If m is even, start with horizontal; if odd, start with vertical.
-    const firstMove = (m % 2 === 0) ? 'horizontal' : 'vertical';
-    pattern.push(firstMove);
-    for (let i = 1; i < m; i++) {
-      pattern.push(pattern[i - 1] === 'horizontal' ? 'vertical' : 'horizontal');
+    for (let i = 0; i < n - 1; i++) {
+      pattern.push(i === 0 ? ((n - 1) % 2 === 0 ? 'horizontal' : 'vertical')
+                           : (pattern[i - 1] === 'horizontal' ? 'vertical' : 'horizontal'));
     }
     return pattern;
-  }
+  };
 
   for (let attempt = 0; attempt < params.maxPathAttempts; attempt++) {
     const pattern = getPattern();
     const startCol = randInt(0, gridWidth - 1);
-    let path = [{ row: 0, col: startCol }];
+    const path = [{ row: 0, col: startCol }];
     let valid = true;
-
-    // For each move in the pattern, generate the next tile.
-    // i indexes the current move in the pattern.
     for (let i = 0; i < pattern.length; i++) {
       const current = path[path.length - 1];
       if (pattern[i] === 'horizontal') {
-        // Allowed: same row, any column except current.col.
-        let allowedCols = [];
-        for (let col = 0; col < gridWidth; col++) {
-          if (col !== current.col && !path.some(t => t.row === current.row && t.col === col)) {
-            allowedCols.push(col);
-          }
-        }
-        if (allowedCols.length === 0) {
-          valid = false;
-          break;
-        }
-        const nextCol = allowedCols[randInt(0, allowedCols.length - 1)];
-        // For horizontal moves, the row remains the same.
-        path.push({ row: current.row, col: nextCol });
-      } else { // vertical move (allowed upward or downward)
-        let allowedRows = [];
-        for (let row = 0; row < gridHeight; row++) {
-          if (row === current.row) continue;
-          // Disallow bottom row if this is not the final move.
-          if (i < pattern.length - 1 && row === gridHeight - 1) continue;
-          if (!path.some(t => t.row === row && t.col === current.col)) {
-            allowedRows.push(row);
-          }
-        }
-        if (allowedRows.length === 0) {
-          valid = false;
-          break;
-        }
-        const nextRow = allowedRows[randInt(0, allowedRows.length - 1)];
-        path.push({ row: nextRow, col: current.col });
+        const allowedCols = Array.from({ length: gridWidth }, (_, col) => col)
+          .filter(col => col !== current.col && !path.some(t => t.row === current.row && t.col === col));
+        if (!allowedCols.length) { valid = false; break; }
+        path.push({ row: current.row, col: allowedCols[randInt(0, allowedCols.length - 1)] });
+      } else {
+        const allowedRows = Array.from({ length: gridHeight }, (_, row) => row)
+          .filter(row => row !== current.row && (i === pattern.length - 1 ? true : row !== gridHeight - 1)
+                          && !path.some(t => t.row === row && t.col === current.col));
+        if (!allowedRows.length) { valid = false; break; }
+        path.push({ row: allowedRows[randInt(0, allowedRows.length - 1)], col: current.col });
       }
     }
-    // Final check: Only accept the path if the last tile is in the bottom row.
-    if (valid && path[path.length - 1].row === gridHeight - 1) {
-      return path;
-    }
+    if (valid && path[path.length - 1].row === gridHeight - 1) return path;
   }
-  console.log("Failed to generate a winning path after many attempts.");
+  console.log("Failed to generate a winning path.");
   return null;
 }
 
-// ------------------------------
 // Board Generation
-// ------------------------------
-
-// Generate the board with a winning path embedded.
 function generateBoard(requiredScore) {
-  const { gridHeight, gridWidth } = params;
-  // Initialize board with nulls.
-  board = Array.from({ length: gridHeight }, () => Array(gridWidth).fill(null));
-
+  state.board = Array.from({ length: params.gridHeight }, () => Array(params.gridWidth).fill(null));
   const seqResult = generateWinningSequence(requiredScore);
   if (!seqResult) {
-    alert("An error occurred while generating the board. Please try again later.");
-    gameActive = false;
+    alert("Error generating board. Please try again later.");
+    state.gameActive = false;
     return;
   }
-  winningSequence = seqResult.seq;
-  const seqLength = seqResult.length;
-
-  const pathLayout = generateWinningPathLayout(seqLength);
+  state.winningSequence = seqResult.seq;
+  const pathLayout = generateWinningPathLayout(seqResult.length);
   if (!pathLayout) {
-    alert("An error occurred while generating the board. Please try again later.");
-    gameActive = false;
+    alert("Error generating board. Please try again later.");
+    state.gameActive = false;
     return;
   }
-  winningPath = deepCopy(pathLayout);
-  // Place the winning sequence numbers along the winning path.
-  winningPath.forEach((tile, index) => {
-    board[tile.row][tile.col] = winningSequence[index];
-    tile.value = winningSequence[index];
+  state.winningPath = deepCopy(pathLayout);
+  state.winningPath.forEach((tile, index) => {
+    state.board[tile.row][tile.col] = state.winningSequence[index];
+    tile.value = state.winningSequence[index];
   });
-  // Fill in the remaining board.
-  for (let r = 0; r < gridHeight; r++) {
-    for (let c = 0; c < gridWidth; c++) {
-      if (board[r][c] === null) {
-        if (r === 0) {
-          // First row: roll twice and take the lower number.
-          board[r][c] = Math.min(randInt(params.minTileValue, params.maxTileValue),
-                                 randInt(params.minTileValue, params.maxTileValue));
-        } else if (r === gridHeight - 1) {
-          // Last row: roll twice and take the higher number.
-          board[r][c] = Math.max(randInt(params.minTileValue, params.maxTileValue),
-                                 randInt(params.minTileValue, params.maxTileValue));
-        } else {
-          // All other rows: roll once.
-          board[r][c] = randInt(params.minTileValue, params.maxTileValue);
-        }
+  for (let r = 0; r < params.gridHeight; r++) {
+    for (let c = 0; c < params.gridWidth; c++) {
+      if (state.board[r][c] === null) {
+        state.board[r][c] = r === 0
+          ? Math.min(randInt(params.minTileValue, params.maxTileValue), randInt(params.minTileValue, params.maxTileValue))
+          : r === params.gridHeight - 1
+          ? Math.max(randInt(params.minTileValue, params.maxTileValue), randInt(params.minTileValue, params.maxTileValue))
+          : randInt(params.minTileValue, params.maxTileValue);
       }
     }
   }
 }
 
-// ------------------------------
-// Rendering the Board
-// ------------------------------
+// Rendering
 function renderBoard() {
-  const { gridHeight, gridWidth } = params;
   boardEl.innerHTML = '';
-  boardEl.style.gridTemplateColumns = `repeat(${gridWidth}, 50px)`;
-  for (let r = 0; r < gridHeight; r++) {
-    for (let c = 0; c < gridWidth; c++) {
+  boardEl.style.gridTemplateColumns = `repeat(${params.gridWidth}, 50px)`;
+  for (let r = 0; r < params.gridHeight; r++) {
+    for (let c = 0; c < params.gridWidth; c++) {
       const tileEl = document.createElement('div');
-      tileEl.classList.add('tile');
-      if (r === 0) tileEl.classList.add('tile-top');
-      if (r === gridHeight - 1) tileEl.classList.add('tile-bottom');
+      tileEl.className = 'tile' + (r === 0 ? ' tile-top' : '') + (r === params.gridHeight - 1 ? ' tile-bottom' : '');
       tileEl.dataset.row = r;
       tileEl.dataset.col = c;
-      tileEl.textContent = board[r][c];
-      if (selectedPath.some(t => t.row === r && t.col === c)) {
+      tileEl.textContent = state.board[r][c];
+      if (state.selectedPath.some(t => t.row === r && t.col === c)) {
         tileEl.classList.add('selected');
       }
       boardEl.appendChild(tileEl);
@@ -370,12 +228,10 @@ function renderBoard() {
   overlayEl.innerHTML = '';
 }
 
-// ------------------------------
-// Drawing the Connecting Path
-// ------------------------------
 function drawPath(pathArray) {
   overlayEl.innerHTML = '';
   if (pathArray.length === 0) return;
+
   const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
   polyline.setAttribute("fill", "none");
   polyline.setAttribute("stroke", "#FFFF44");
@@ -413,189 +269,117 @@ function drawPath(pathArray) {
   polyline.style.animation = `drawLine ${duration}s ease-out forwards, pulsateGlow 2s ease-in-out infinite`;
 }
 
-// ------------------------------
-// Game State Management & Moves
-// ------------------------------
-function isLegalMove(row, col) {
-  const tileValue = board[row][col];
-  // Prevent selecting a tile that's already in the selected path.
-  if (selectedPath.some(t => t.row === row && t.col === col)) return false;
-
-  // Disallow any move to a bottom row tile if the current round score is below the minimum.
-  if (row === params.gridHeight - 1 && roundScore < params.minRoundScore) return false;
-
-  // First move: must be on the top row.
-  if (selectedPath.length === 0) {
-    return row === 0;
-  }
-
-  const lastTile = selectedPath[selectedPath.length - 1];
-  // The new tile's value must be equal to or higher than the last tile's value.
-  if (tileValue < lastTile.value) return false;
-  // Second move: allow any tile in the same row or the same column.
-  if (selectedPath.length === 1) {
-    return (row === lastTile.row || col === lastTile.col);
-  }
-
-  // For subsequent moves, determine the direction of the previous move.
-  const prevTile = selectedPath[selectedPath.length - 2];
-  // If the previous move was horizontal (same row), the current move must be vertical.
-  if (prevTile.row === lastTile.row) {
-    return col === lastTile.col;
-  }
-  // If the previous move was vertical (same column), the current move must be horizontal.
-  if (prevTile.col === lastTile.col) {
-    return row === lastTile.row;
-  }
-
-  return false;
-}
-
-function highlightLegalMoves() {
-  document.querySelectorAll('.tile.legal').forEach(el => {
-    el.classList.remove('legal');
-  });
-  if (!gameActive) return;
-  const { gridHeight, gridWidth } = params;
-
-  if (selectedPath.length === 0) {
-    // For the first move, legal moves are all top row tiles.
-    for (let c = 0; c < gridWidth; c++) {
-      const tile = getTileEl(0, c);
-      if (!tile.classList.contains('selected')) {
-        tile.classList.add('legal');
-      }
-    }
-  } else {
-    const lastTile = selectedPath[selectedPath.length - 1];
-    let legalTiles = [];
-    if (selectedPath.length === 1) {
-      // For the second move, legal moves are in the same row or same column.
-      // Same row:
-      for (let c = 0; c < gridWidth; c++) {
-        if (c !== lastTile.col) legalTiles.push({ row: lastTile.row, col: c });
-      }
-      // Same column:
-      for (let r = 0; r < gridHeight; r++) {
-        if (r !== lastTile.row) legalTiles.push({ row: r, col: lastTile.col });
-      }
-    } else {
-      const prevTile = selectedPath[selectedPath.length - 2];
-      if (prevTile.row === lastTile.row) {
-        // Previous move was horizontal, so the current move must be vertical.
-        for (let r = 0; r < gridHeight; r++) {
-          if (r !== lastTile.row) legalTiles.push({ row: r, col: lastTile.col });
-        }
-      } else if (prevTile.col === lastTile.col) {
-        // Previous move was vertical, so the current move must be horizontal.
-        for (let c = 0; c < gridWidth; c++) {
-          if (c !== lastTile.col) legalTiles.push({ row: lastTile.row, col: c });
-        }
-      }
-    }
-    // Filter out moves that don't satisfy the non-decreasing condition,
-    // and disallow bottom row moves if the current score is below the required minimum.
-    legalTiles = legalTiles.filter(tile => {
-      if (tile.row === params.gridHeight - 1 && roundScore < params.minRoundScore) return false;
-      return board[tile.row][tile.col] >= lastTile.value;
-    });
-    legalTiles.forEach(tile => {
-      const tileEl = getTileEl(tile.row, tile.col);
-      tileEl.classList.add('legal');
-    });
-    if (legalTiles.length === 0) {
-      endRound(false);
-    }
-  }
-}
-
+// Game Moves
 function getTileEl(row, col) {
   return document.querySelector(`.tile[data-row="${row}"][data-col="${col}"]`);
 }
 
+function isLegalMove(row, col) {
+  const tileValue = state.board[row][col];
+  if (state.selectedPath.some(t => t.row === row && t.col === col)) return false;
+  if (row === params.gridHeight - 1 && state.roundScore < params.minRoundScore) return false;
+  if (!state.selectedPath.length) return row === 0;
+  const lastTile = state.selectedPath[state.selectedPath.length - 1];
+  if (tileValue < lastTile.value) return false;
+  if (state.selectedPath.length === 1) return (row === lastTile.row || col === lastTile.col);
+  const prevTile = state.selectedPath[state.selectedPath.length - 2];
+  return prevTile.row === lastTile.row ? col === lastTile.col : row === lastTile.row;
+}
+
+function highlightLegalMoves() {
+  document.querySelectorAll('.tile.legal').forEach(el => el.classList.remove('legal'));
+  if (!state.gameActive) return;
+  if (!state.selectedPath.length) {
+    for (let c = 0; c < params.gridWidth; c++) {
+      getTileEl(0, c)?.classList.add('legal');
+    }
+  } else {
+    const lastTile = state.selectedPath[state.selectedPath.length - 1];
+    let legalTiles = [];
+    if (state.selectedPath.length === 1) {
+      for (let c = 0; c < params.gridWidth; c++) {
+        if (c !== lastTile.col) legalTiles.push({ row: lastTile.row, col: c });
+      }
+      for (let r = 0; r < params.gridHeight; r++) {
+        if (r !== lastTile.row) legalTiles.push({ row: r, col: lastTile.col });
+      }
+    } else {
+      const prevTile = state.selectedPath[state.selectedPath.length - 2];
+      if (prevTile.row === lastTile.row) {
+        for (let r = 0; r < params.gridHeight; r++) {
+          if (r !== lastTile.row) legalTiles.push({ row: r, col: lastTile.col });
+        }
+      } else if (prevTile.col === lastTile.col) {
+        for (let c = 0; c < params.gridWidth; c++) {
+          if (c !== lastTile.col) legalTiles.push({ row: lastTile.row, col: c });
+        }
+      }
+    }
+    legalTiles = legalTiles.filter(tile => {
+      if (tile.row === params.gridHeight - 1 && state.roundScore < params.minRoundScore) return false;
+      return state.board[tile.row][tile.col] >= lastTile.value;
+    });
+    legalTiles.forEach(tile => getTileEl(tile.row, tile.col)?.classList.add('legal'));
+    if (!legalTiles.length) endRound(false);
+  }
+}
+
 function updateRoundScore() {
-  const sum = selectedPath.reduce((acc, tile) => acc + tile.value, 0);
-  const length = selectedPath.length;
-  roundScore = sum * length;
+  const sum = state.selectedPath.reduce((acc, tile) => acc + tile.value, 0);
+  state.roundScore = sum * state.selectedPath.length;
 }
 
 function handleTileClick(e) {
-  if (!gameActive) return;
+  if (!state.gameActive) return;
   const tileEl = e.currentTarget;
   if (!tileEl.classList.contains('legal')) return;
-  const row = parseInt(tileEl.dataset.row);
-  const col = parseInt(tileEl.dataset.col);
+  const row = parseInt(tileEl.dataset.row), col = parseInt(tileEl.dataset.col);
   if (!isLegalMove(row, col)) return;
-  const value = board[row][col];
-  selectedPath.push({ row, col, value });
-  playBlip(selectedPath.length);
-
+  const value = state.board[row][col];
+  state.selectedPath.push({ row, col, value });
+  playBlip(state.selectedPath.length);
   tileEl.classList.add('selected');
   updateRoundScore();
   updateTopInfo();
   if (row === params.gridHeight - 1) {
-    const score = calculateRoundScore();
-    if (score >= params.minRoundScore) {
+    if (state.roundScore >= params.minRoundScore) {
       endRound(true);
     } else {
       endRound(false);
       playLoseSound();
     }
-    drawPath(selectedPath);
+    drawPath(state.selectedPath);
     return;
   }
   highlightLegalMoves();
 }
 
-function calculateRoundScore() {
-  const sum = selectedPath.reduce((acc, tile) => acc + tile.value, 0);
-  return sum * selectedPath.length;
-}
-
 function updateTopInfo() {
-  const timerEl = document.getElementById('timer');
-  const topScoreEl = document.getElementById('topScore');
-  const topStatusEl = document.getElementById('topStatus');
-
-  timerEl.textContent = "Time: " + formatTime(timeLeft);
-  topScoreEl.textContent = `Score: ${roundScore}`;
-
-  let pointsMissing = currentRequiredScore - roundScore;
-  if (pointsMissing <= 0) {
-    topStatusEl.textContent = "Breached!";
-  } else {
-    topStatusEl.textContent = `Missing: ${pointsMissing}`;
-  }
+  document.getElementById('timer').textContent = "Time: " + formatTime(state.timeLeft);
+  document.getElementById('topScore').textContent = `Score: ${state.roundScore}`;
+  const pointsMissing = state.currentRequiredScore - state.roundScore;
+  document.getElementById('topStatus').textContent = pointsMissing <= 0 ? "Breached!" : `Missing: ${pointsMissing}`;
 }
 
-// A function to retrieve the high score from localStorage, defaulting to 0 if not set.
 function getHighScore() {
   return parseInt(localStorage.getItem('highScore')) || 0;
 }
 
 function updateHighScore() {
   const currentHigh = getHighScore();
-  if (totalScore > currentHigh) {
-    localStorage.setItem('highScore', totalScore);
-    highScoreText.textContent = `High Score: ${totalScore}`;
+  if (state.totalScore > currentHigh) {
+    localStorage.setItem('highScore', state.totalScore);
+    highScoreText.textContent = `High Score: ${state.totalScore}`;
   }
 }
 
 function updateDifficulty(roundNumber) {
-  // increase minRoundScore but not above maxMinRoundScore
   params.minRoundScore = Math.min(params.minRoundScore + params.requiredPointsIncrement, maxMinRoundScore);
-
-  const num = 4;
-  if (roundNumber === num + 1) {
+  if (roundNumber > 1 && roundNumber % 4 === 1) {
     params.roundTime += 5;
-  } else if (roundNumber === 2 * num + 1) {
-    params.roundTime += 5;
-    params.gridHeight += 1;
-  } else if (roundNumber === 3 * num + 1) {
-    params.roundTime += 5;
-  } else if (roundNumber === 4 * num + 1) {
-    params.roundTime += 5;
-    params.gridHeight += 1;
+    if (Math.floor((roundNumber - 1) / 4) % 2 === 0) {
+      params.gridHeight += 1;
+    }
   }
 }
 
@@ -607,59 +391,45 @@ function resetDifficulty() {
 }
 
 function addGlitchEffect() {
-  document.querySelector('#boardContainer').classList.add('game-glitch');
-
-  // Apply glitch effect to all tiles
-  const tiles = document.querySelectorAll('.tile');
-  tiles.forEach(tile => {
-    // Store the number in the data-number attribute
+  const boardContainer = document.querySelector('#boardContainer');
+  boardContainer.classList.add('game-glitch');
+  document.querySelectorAll('.tile').forEach(tile => {
     tile.setAttribute('data-number', tile.textContent);
     tile.classList.add('glitch');
   });
-
   setTimeout(() => {
-    document.querySelector('#boardContainer').classList.remove('game-glitch');
-    tiles.forEach(tile => {
-      tile.classList.remove('glitch');
-    });
-  }, 1200);  // duration of the glitch effect in ms
+    boardContainer.classList.remove('game-glitch');
+    document.querySelectorAll('.tile').forEach(tile => tile.classList.remove('glitch'));
+  }, 1200);
 }
 
 function removeGlitchEffect() {
-  // Remove glitch effect from the game container
-  document.querySelector('#boardContainer').classList.remove('glitch-active');
-  // Remove glitch effect from all tiles
-  const tiles = document.querySelectorAll('.tile');
-  tiles.forEach(tile => {
-    tile.classList.remove('glitch');
-  });
+  const boardContainer = document.querySelector('#boardContainer');
+  boardContainer.classList.remove('game-glitch', 'glitch-active');
+  document.querySelectorAll('.tile').forEach(tile => tile.classList.remove('glitch'));
 }
 
-
 function endRound(win) {
-  gameActive = false;
-  clearInterval(timerInterval);
-  document.querySelectorAll('.tile.legal').forEach(el => {
-    el.classList.remove('legal');
-  });
+  state.gameActive = false;
+  clearInterval(state.timerInterval);
+  document.querySelectorAll('.tile.legal').forEach(el => el.classList.remove('legal'));
   stopBtn.disabled = true;
-
   if (win) {
-    totalScore += roundScore;
-    document.getElementById('messageLine').textContent = "Your breach was successfully!";
+    state.totalScore += state.roundScore;
+    document.getElementById('messageLine').textContent = "Your breach was successful!";
     document.getElementById('messageLine').className = "info-line win";
-    updateHistory(roundNumber, currentRequiredScore, roundScore, totalScore);
-    roundNumber++;
-    updateDifficulty(roundNumber);
+    updateHistory(state.roundNumber, state.currentRequiredScore, state.roundScore, state.totalScore);
+    state.roundNumber++;
+    updateDifficulty(state.roundNumber);
     nextRoundBtn.disabled = false;
     showSolutionBtn.disabled = true;
   } else {
     document.getElementById('messageLine').textContent = "You have been caught!";
     document.getElementById('messageLine').className = "info-line lose";
-    updateHistory(roundNumber, currentRequiredScore, roundScore, totalScore);
+    updateHistory(state.roundNumber, state.currentRequiredScore, state.roundScore, state.totalScore);
     nextRoundBtn.disabled = true;
     showSolutionBtn.disabled = false;
-    gameOver = true;
+    state.gameOver = true;
     addGlitchEffect();
     playLoseSound();
   }
@@ -670,136 +440,84 @@ function endRound(win) {
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
   const secs = seconds % 60;
-  // Always show two digits for minutes and seconds.
   return `${minutes < 10 ? "0" : ""}${minutes}:${secs < 10 ? "0" : ""}${secs}`;
 }
 
 function startTimer() {
-  timeLeft = params.roundTime;
-  timerEl.textContent = "Time: " + formatTime(timeLeft);
-
-  // Reset warning flags at the start of each round.
+  state.timeLeft = params.roundTime;
+  timerEl.textContent = "Time: " + formatTime(state.timeLeft);
   let warning10Played = false;
-  let warning5Played = false;
-
-  const rootStyles = getComputedStyle(document.documentElement);
-  const timerDefaultColor = rootStyles.getPropertyValue('--timer-default-color').trim();
+  const timerDefaultColor = getComputedStyle(document.documentElement)
+    .getPropertyValue('--timer-default-color').trim();
   timerEl.style.color = timerDefaultColor;
-
-  timerInterval = setInterval(() => {
-    timeLeft--;
-    timerEl.textContent = "Time: " + formatTime(timeLeft);
-
-    if (timeLeft <= 10 && timeLeft > 0) {
-      timerEl.style.color = "red";
-    }
-
-    if (timeLeft === 10 && !warning10Played) {
-      playWarningSound10();
+  state.timerInterval = setInterval(() => {
+    state.timeLeft--;
+    timerEl.textContent = "Time: " + formatTime(state.timeLeft);
+    if (state.timeLeft <= 10 && state.timeLeft > 0) timerEl.style.color = "red";
+    if (state.timeLeft === 10 && !warning10Played) {
+      playWarningSound(600);
       warning10Played = true;
     }
-
-    if (timeLeft <= 5 && timeLeft > 0) {
-      playWarningSound5();
-    }
-
-    if (timeLeft <= 0) {
-      clearInterval(timerInterval);
+    if (state.timeLeft <= 5 && state.timeLeft > 0) playWarningSound(750);
+    if (state.timeLeft <= 0) {
+      clearInterval(state.timerInterval);
       endRound(false);
-      drawPath(selectedPath);
+      drawPath(state.selectedPath);
     }
   }, 1000);
 }
 
-// ------------------------------
-// Show Winning Path
-// ------------------------------
 function revealWinningPath() {
-  winningPath.forEach(tile => {
-    const tileEl = getTileEl(tile.row, tile.col);
-    tileEl.classList.add('solution');
-  });
-  drawPath(winningPath);
+  state.winningPath.forEach(tile => getTileEl(tile.row, tile.col)?.classList.add('solution'));
+  drawPath(state.winningPath);
   showSolutionBtn.disabled = true;
 }
 
-// ------------------------------
-// Score preview
-// ------------------------------
-
+// Tooltip for Score Preview
 let tooltipTimeout;
-
 function showTooltipForTile(tileEl) {
-  // Compute potential score: if the tile's value is added,
-  // potential score = (current sum + tileValue) * (current count + 1).
   const tileValue = parseInt(tileEl.textContent);
-  const currentSum = selectedPath.reduce((acc, tile) => acc + tile.value, 0);
-  const newCount = selectedPath.length + 1;
+  const currentSum = state.selectedPath.reduce((acc, tile) => acc + tile.value, 0);
+  const newCount = state.selectedPath.length + 1;
   const potentialScore = (currentSum + tileValue) * newCount;
-
-  // Position the tooltip near the tile.
   const rect = tileEl.getBoundingClientRect();
   const tooltip = document.getElementById('tooltip');
   tooltip.textContent = `${potentialScore}`;
-
-  // Position tooltip above the tile if possible.
   tooltip.style.left = rect.left + (rect.width / 2) + 'px';
-  tooltip.style.top = (rect.top - 10) + 'px'; // 10px above the tile
+  tooltip.style.top = (rect.top - 10) + 'px';
   tooltip.style.display = 'block';
-  // Fade in after a delay of 500ms.
-  setTimeout(() => {
-    tooltip.style.opacity = '1';
-  }, 500);
+  setTimeout(() => { tooltip.style.opacity = '1'; }, 500);
 }
 
 function hideTooltip() {
   const tooltip = document.getElementById('tooltip');
   tooltip.style.opacity = '0';
-  // Hide after fade-out.
-  setTimeout(() => {
-    tooltip.style.display = 'none';
-  }, 200);
+  setTimeout(() => { tooltip.style.display = 'none'; }, 200);
 }
 
-// Use event delegation on the board.
 boardEl.addEventListener('mouseover', (e) => {
-  // Only show tooltip if the hovered element is a legal tile.
   const tileEl = e.target.closest('.tile.legal');
-  if (tileEl) {
-    // Set a timeout of 0.5 seconds before showing the tooltip.
-    tooltipTimeout = setTimeout(() => {
-      showTooltipForTile(tileEl);
-    }, 500);
-  }
+  if (tileEl) tooltipTimeout = setTimeout(() => showTooltipForTile(tileEl), 500);
 });
-
-boardEl.addEventListener('mouseout', (e) => {
-  // When the mouse leaves a tile, clear the timeout and hide the tooltip.
+boardEl.addEventListener('mouseout', () => {
   clearTimeout(tooltipTimeout);
   hideTooltip();
 });
 
-// ------------------------------
-// Game Initialization and Reset
-// ------------------------------
+// Game Initialization
 async function startRound() {
-  currentRequiredScore = params.minRoundScore;
-  selectedPath = [];
-  roundScore = 0;
-
-  // Clear the info panel and hide it initially.
-  document.getElementById('messageLine') && (document.getElementById('messageLine').textContent = "");
-
-  gameActive = true;
+  state.currentRequiredScore = params.minRoundScore;
+  state.selectedPath = [];
+  state.roundScore = 0;
+  const messageLine = document.getElementById('messageLine');
+  if (messageLine) messageLine.textContent = "";
+  state.gameActive = true;
   nextRoundBtn.disabled = true;
   showSolutionBtn.disabled = true;
   stopBtn.disabled = false;
-
-  generateBoard(currentRequiredScore);
+  generateBoard(state.currentRequiredScore);
   renderBoard();
-  document.querySelectorAll('.tile').forEach(tileEl => {
-    tileEl.addEventListener('click', handleTileClick);
-  });
+  document.querySelectorAll('.tile').forEach(tileEl => tileEl.addEventListener('click', handleTileClick));
   await revealTiles(document.getElementById('board'), 15);
   highlightLegalMoves();
   updateTopInfo();
@@ -807,120 +525,66 @@ async function startRound() {
 }
 
 function restartGame() {
-  clearInterval(timerInterval);
-  totalScore = 0;
-  // Reset required points to initial value.
+  clearInterval(state.timerInterval);
+  state.totalScore = 0;
   params.minRoundScore = initialMinRoundScore;
-  roundNumber = 1;
-  // Clear the history table.
+  state.roundNumber = 1;
   document.querySelector('#historyTable tbody').innerHTML = "";
   removeGlitchEffect();
-  // Reset game flags.
-  gameOver = false;
-  highScore = getHighScore();
-  highScoreText.textContent = `High Score: ${highScore}`;
+  state.gameOver = false;
+  highScoreText.textContent = `High Score: ${getHighScore()}`;
   resetDifficulty();
   startRound();
 }
 
 function revealTiles(board, delay = 20) {
   const tiles = board.querySelectorAll('.tile');
-  const totalTiles = tiles.length;
-
-  // First, hide all tiles
   tiles.forEach(tile => {
     tile.style.transform = 'rotateY(90deg)';
     tile.style.opacity = '0';
   });
-
-  // Then reveal them one by one with a staggered delay
   tiles.forEach((tile, index) => {
     setTimeout(() => {
-      // Add transition properties
       tile.style.transition = 'transform 0.1s ease, opacity 0.1s ease';
       tile.style.transform = 'rotateY(0deg)';
       tile.style.opacity = '1';
-
-      // Optional: Remove the transition after animation completes
-      setTimeout(() => {
-        tile.style.transition = '';
-      }, 300);
-    }, index * delay); // Staggered delay based on tile index
+      setTimeout(() => { tile.style.transition = ''; }, 300);
+    }, index * delay);
   });
-
-  // Return a promise that resolves when all tiles are revealed
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve();
-    }, totalTiles * delay + 300); // Total animation time
-  });
+  return new Promise(resolve => setTimeout(resolve, tiles.length * delay + 300));
 }
-
-// ---------------
-// Score display
-// ---------------
 
 function updateHistory(round, minScore, achieved, cumulative) {
   const tbody = document.querySelector('#historyTable tbody');
   const tr = document.createElement('tr');
-  // If the achieved score is less than the minimum required, mark this round as failed.
-  if (achieved < minScore) {
-    tr.classList.add('fail');
-  }
+  if (achieved < minScore) tr.classList.add('fail');
   tr.innerHTML = `<td>${round}</td><td>${minScore}</td><td>${achieved}</td><td>${cumulative}</td>`;
   tbody.appendChild(tr);
 }
 
-// ------------------------------
 // Button Event Listeners
-// ------------------------------
 newGameBtn.addEventListener('click', () => {
-  // If the game is in progress (i.e. progress exists and game is not already over/stopped), ask for confirmation.
-  if ((gameActive || !gameOver) && ((selectedPath.length > 0) || (roundNumber > 1))) {
-    const confirmRestart = confirm("You will lose your current progress. Continue?");
-    if (!confirmRestart) {
-      return;  // Cancel new game.
-    }
+  if ((state.gameActive || !state.gameOver) && (state.selectedPath.length > 0 || state.roundNumber > 1)) {
+    if (!confirm("You will lose your current progress. Continue?")) return;
   }
   restartGame();
 });
 
 stopBtn.addEventListener('click', () => {
-  if ((gameActive || !gameOver) && ((selectedPath.length > 0) || (roundNumber > 1))) {
-    const confirmStop = confirm("You will lose your current progress. Continue?");
-    if (!confirmStop) {
-      return;
-    }
+  if ((state.gameActive || !state.gameOver) && (state.selectedPath.length > 0 || state.roundNumber > 1)) {
+    if (!confirm("You will lose your current progress. Continue?")) return;
   }
-  clearInterval(timerInterval);
-  gameActive = false;
-  // Clear the board and overlay.
+  clearInterval(state.timerInterval);
+  state.gameActive = false;
   boardEl.innerHTML = "";
   overlayEl.innerHTML = "";
-  // Hide game-related controls.
   nextRoundBtn.disabled = true;
   showSolutionBtn.disabled = true;
   stopBtn.disabled = true;
 });
 
-nextRoundBtn.addEventListener('click', () => {
-  startRound();
-});
-
-showSolutionBtn.addEventListener('click', () => {
-  revealWinningPath();
-});
-
-helpBtn.addEventListener('click', () => {
-  helpModal.style.display = 'block';
-});
-
-closeHelpBtn.addEventListener('click', () => {
-  helpModal.style.display = 'none';
-});
-
-window.addEventListener('click', (e) => {
-  if (e.target === helpModal) {
-    helpModal.style.display = 'none';
-  }
-});
+nextRoundBtn.addEventListener('click', startRound);
+showSolutionBtn.addEventListener('click', revealWinningPath);
+helpBtn.addEventListener('click', () => { helpModal.style.display = 'block'; });
+closeHelpBtn.addEventListener('click', () => { helpModal.style.display = 'none'; });
+window.addEventListener('click', (e) => { if (e.target === helpModal) helpModal.style.display = 'none'; });
