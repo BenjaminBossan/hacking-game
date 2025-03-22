@@ -67,16 +67,18 @@
       <h2>How to Play</h2>
       <ul>
         <li>The Matrix Breach is a puzzle game inspired by the <a href="https://cyberpunk.fandom.com/wiki/Quickhacking">Cyberpunk 2077 hacking minigame</a>. You are a hacker trying to breach a secure system.</li>
-        <li>The board is a grid of tiles (7×7 by default), with each tile showing a number between 1 and 9.</li>
+        <li>The board is a matrix of tiles (7×7 at the start), with each tile showing a number between 1 and 9.</li>
         <li>Begin by selecting a tile in the top row.</li>
         <li>Your second move can be in the same row or column as your first; then moves alternate between horizontal and vertical.</li>
         <li>You may only select a tile whose number is equal to or greater than your last selected tile.</li>
-        <li>You cannot select the same tile twice
-        <li>The round ends when you select a tile in the bottom row.</li>
+        <li>You cannot select the same tile twice.</li>
+        <li>You cannot end the level before reaching the minimum score, as shown above the matrix.</li>
         <li>Your score equals the sum of your selected tile numbers multiplied by the length of your path.</li>
+        <li>Once you reached the minimum score, you breached the matrix. You may now escape by selecting a tile in the bottom row.</li>
         <li>Each round has a required score that increases after every win.</li>
         <li>If no legal move remains or time (45 seconds) expires, you lose the round and must restart.</li>
         <li>If you lose, you can view the winning path using the "Show Solution" button.</li>
+        <li>Chase new highscores by winning many rounds in a row. The high score is the sum of the scores of each level.</li>
         <li>Source code is available on <a href="https://github.com/BenjaminBossan/hacking-game" target="_blank">GitHub</a>.</li>
       </ul>
       <button id="closeHelpBtn">Close</button>

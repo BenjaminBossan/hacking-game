@@ -28,17 +28,19 @@ Open the `index.html` file in your browser.
   - You can only select a tile with a **number equal to or higher than the number on you last selected**.
 
 - **Round End and Scoring:**
-  - The round **ends** when you select a tile in the **bottom row**.
+  - Your goal is to breach the matrix by reaching or exceeding the score (shown above the matrix).
   - Your score is calculated as **sum of selected tile numbers × length of your path**.
-  - To win the round, your score must meet or exceed the current required points (shown at the bottom). After a win, the required points increase.
-  - If you run out of time, have no legal moves, or the final score is too low, you lose the round.
+  - Once you have breached, escape the system by selecting a tile in the **bottom row**.
+  - After a win, advance to the next level; the required score increase.
+  - If you run out of time or have no legal moves left, you lose the game and have to start again from the first level.
   - If you lose, you may click **"Show Solution"** to view one possible solution.
 
 - **Chase new high scores**
   - After each win, the next breach becomes more difficult.
-  - Beat your high score by breaching deeper and deeper.
+  - Beat your high score by breaching deeper and deeper. The total score is the sum of the scores of each level.
 
 - **Tip**
+  - Just because you have breached (required score is reached), you don't have to immediately end the round. Try to get an even higher score before your exit, but don't forget the timer!
   - Hover over a tile to preview the score.
 
 ## Screenshots

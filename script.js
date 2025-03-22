@@ -421,6 +421,9 @@ function isLegalMove(row, col) {
   // Prevent selecting a tile that's already in the selected path.
   if (selectedPath.some(t => t.row === row && t.col === col)) return false;
 
+  // Disallow any move to a bottom row tile if the current round score is below the minimum.
+  if (row === params.gridHeight - 1 && roundScore < params.minRoundScore) return false;
+
   // First move: must be on the top row.
   if (selectedPath.length === 0) {
     return row === 0;
@@ -490,8 +493,12 @@ function highlightLegalMoves() {
         }
       }
     }
-    // Filter out moves that don't satisfy the non-decreasing condition.
-    legalTiles = legalTiles.filter(tile => board[tile.row][tile.col] >= lastTile.value);
+    // Filter out moves that don't satisfy the non-decreasing condition,
+    // and disallow bottom row moves if the current score is below the required minimum.
+    legalTiles = legalTiles.filter(tile => {
+      if (tile.row === params.gridHeight - 1 && roundScore < params.minRoundScore) return false;
+      return board[tile.row][tile.col] >= lastTile.value;
+    });
     legalTiles.forEach(tile => {
       const tileEl = getTileEl(tile.row, tile.col);
       tileEl.classList.add('legal');
@@ -739,10 +746,10 @@ function showTooltipForTile(tileEl) {
   tooltip.style.left = rect.left + (rect.width / 2) + 'px';
   tooltip.style.top = (rect.top - 10) + 'px'; // 10px above the tile
   tooltip.style.display = 'block';
-  // Fade in:
+  // Fade in after a delay of 500ms.
   setTimeout(() => {
     tooltip.style.opacity = '1';
-  }, 50);
+  }, 500);
 }
 
 function hideTooltip() {
