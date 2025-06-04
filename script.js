@@ -122,8 +122,9 @@ function generateWinningSequence(requiredScore) {
   const { minTileValue, maxTileValue, maxSequenceAttempts, minPathLength, maxPathLength } = params;
   const mu = (minTileValue + maxTileValue) / 2;
   let desiredLength = Math.ceil(1.2 * Math.sqrt(requiredScore / mu));
-  const minLen = Math.min(Math.max(minPathLength, desiredLength - 2), desiredLength + 2 - 1);
   const maxLen = Math.min(maxPathLength, desiredLength + 2);
+  let minLen = Math.max(minPathLength, desiredLength - 2);
+  if (minLen > maxLen) minLen = maxLen;
   let attempts = 0;
   while (attempts < params.maxSequenceAttempts) {
     const length = randInt(minLen, maxLen);
